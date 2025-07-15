@@ -17,7 +17,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { 
-  useSfiaJobDetail, 
+  useSfiaSkillDetail, 
   useTpqiUnitDetail 
 } from './hooks/useCompetencyDetail';
 import { useCompetencyDetailError } from './hooks/useCompetencyDetailError';
@@ -191,7 +191,7 @@ const CompetencyDetailPage: React.FC = () => {
   } = useCompetencyDetailError();
 
   // Specialized hooks based on source (must be called before any conditional returns)
-  const sfiaHook = useSfiaJobDetail({
+  const sfiaHook = useSfiaSkillDetail({
     cacheDuration: 5 * 60 * 1000,
     maxRetries: 3,
     autoRetryOnNetworkError: true,

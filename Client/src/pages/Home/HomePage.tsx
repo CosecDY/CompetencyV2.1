@@ -1,6 +1,6 @@
 import React from "react";
 import Layout from "@Layouts/Layout";
-import { HomeHeroSection } from "./component/HomeHeroSection";
+import { HomeHeroSection } from "./components/HomeHeroSection";
 
 const HomePage: React.FC = () => {
   return (

@@ -98,7 +98,7 @@ export function useCompetencyDetail(options: UseCompetencyDetailOptions = {}) {
   }, [opts.cacheDuration]);
 
   /**
-   * Get data from cache if available and valid
+ * Get data from cache if available and valid
    */
   const getFromCache = useCallback((source: "sfia" | "tpqi", code: string): SfiaJobResponse | TpqiUnitResponse | null => {
     const cacheKey = getCacheKey(source, code);
@@ -468,7 +468,7 @@ export function useCompetencyDetail(options: UseCompetencyDetailOptions = {}) {
 /**
  * Simplified hook for SFIA job details only
  */
-export function useSfiaJobDetail(options: UseCompetencyDetailOptions = {}) {
+export function useSfiaSkillDetail(options: UseCompetencyDetailOptions = {}) {
   const {
     state,
     fetchSfiaDetail,
