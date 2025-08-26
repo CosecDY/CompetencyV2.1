@@ -5,7 +5,6 @@ import { BaseService } from "@Utils/BaseService";
 export class RolePermissionService extends BaseService<RolePermission, keyof RolePermission> {
   constructor() {
     super(new RolePermissionsRepository(), ["roleId", "permissionId"], "id");
-    // เพิ่ม "permissionId" ใน searchFields เพื่อให้การค้นหาแบบ OR ครอบคลุมทั้ง roleId และ permissionId
   }
 
   /**
@@ -25,12 +24,19 @@ export class RolePermissionService extends BaseService<RolePermission, keyof Rol
    * Revoke a permission from a role if it exists.
    */
   async revokePermissionFromRole(roleId: number, permissionId: number, actor: string = "system") {
+    console.log("[RolePermissionService] revokePermissionFromRole called with:", { roleId, permissionId, actor });
+
     const existing = await this.repo.findFirst({
       where: { roleId, permissionId },
     });
+
     if (!existing) {
+      console.log("[RolePermissionService] No permission assignment found for roleId:", roleId, "permissionId:", permissionId);
       throw new Error("No permission assignment found for role");
     }
+
+    console.log("[RolePermissionService] Found permission assignment:", existing);
+
     return this.repo.delete(existing.id, actor);
   }
 
@@ -40,7 +46,14 @@ export class RolePermissionService extends BaseService<RolePermission, keyof Rol
   async getPermissionsForRole(roleId: number) {
     return this.repo.findMany({
       where: { roleId },
-      include: { permission: true }, // include related permission entity
+      include: {
+        permission: {
+          include: {
+            operation: true,
+            asset: true,
+          },
+        },
+      },
     });
   }
 }

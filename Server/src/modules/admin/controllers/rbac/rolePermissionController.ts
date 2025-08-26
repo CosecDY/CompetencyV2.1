@@ -21,6 +21,22 @@ function RolePermissionView(rp: RolePermission & { permission?: any }) {
           assetId: rp.permission.assetId,
           createdAt: rp.permission.createdAt,
           updatedAt: rp.permission.updatedAt,
+          operation: rp.permission.operation
+            ? {
+                id: rp.permission.operation.id,
+                name: rp.permission.operation.name,
+                description: rp.permission.operation.description,
+                updatedAt: rp.permission.operation.updatedAt,
+              }
+            : undefined,
+          asset: rp.permission.asset
+            ? {
+                id: rp.permission.asset.id,
+                tableName: rp.permission.asset.tableName,
+                description: rp.permission.asset.description,
+                updatedAt: rp.permission.asset.updatedAt,
+              }
+            : undefined,
         }
       : undefined,
   };

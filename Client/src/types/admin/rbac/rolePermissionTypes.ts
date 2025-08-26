@@ -1,4 +1,6 @@
 // --- RolePermission ---
+import { Permission } from "./permissionTypes";
+
 export interface RolePermission {
   id: number;
   roleId: number;
@@ -11,11 +13,5 @@ export interface RolePermission {
     description?: string | null;
   };
 
-  permission?: {
-    id: number;
-    operationId: number;
-    assetId: number;
-    createdAt: string;
-    updatedAt: string;
-  };
+  permission?: Permission; // ใช้ type Permission ที่รวม operation และ asset แล้ว
 }

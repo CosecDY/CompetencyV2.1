@@ -1,134 +1,161 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { useRoleManager } from "@Hooks/admin/rbac/useRoleManager";
 import { useRolePermissionManager } from "@Hooks/admin/rbac/useRolePermissionManager";
-import { usePermissionManager } from "@Hooks/admin/rbac/usePermissionManager";
-import { Role, Permission } from "@Types/competency/rbacTypes";
+import { useOperationManager } from "@Hooks/admin/rbac/useOperationManager";
+import { useAssetManager } from "@Hooks/admin/rbac/useAssetManager";
 import { Checkbox, Spinner, Toast } from "@Components/Common/ExportComponent";
+import { DataTable } from "@Components/ExportComponent";
+import { ColumnDef } from "@tanstack/react-table";
+import { Operation } from "@Types/admin/rbac/operationTypes";
 
-interface RolePermissionManagerProps {
-  role: Role | null;
-}
+type AssetRow = {
+  assetName: string;
+  create?: Operation;
+  view?: Operation;
+  edit?: Operation;
+  delete?: Operation;
+};
 
-export const RolePermissionManager: React.FC<RolePermissionManagerProps> = ({ role }) => {
+export const RolePermissionManager: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
-  const [activeTab, setActiveTab] = useState<"info" | "permissions">("info");
-  const [togglingPermissionId, setTogglingPermissionId] = useState<number | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const [togglingOperationId, setTogglingOperationId] = useState<number | null>(null);
+
   const handleToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
   };
+  const { assetsQuery } = useAssetManager({ page: 1, perPage: 50 }, handleToast);
+  const assets = assetsQuery.data?.data || [];
+  // Roles
+  const { rolesQuery } = useRoleManager({ page: 1, perPage: 50 }, handleToast);
+  const roles = rolesQuery.data?.data || [];
+  const selectedRole = roles.find((r) => r.id === selectedRoleId) || null;
 
-  const { rolePermissionsQuery, assignPermissionToRole, revokePermissionFromRole } = useRolePermissionManager(role?.id ?? null, handleToast);
-
-  const {
-    permissionsQuery: { data: allPermissions = [], isLoading: isLoadingAllPermissions, isError: isErrorAllPermissions },
-  } = usePermissionManager({ page: 1, perPage: 100 });
-
+  // Role permissions
+  const { rolePermissionsQuery, assignPermissionToRole, revokePermissionFromRole } = useRolePermissionManager(selectedRole?.id ?? null, handleToast);
   const rolePermissions = rolePermissionsQuery.data || [];
-  const isLoadingRolePermissions = rolePermissionsQuery.isLoading;
-  const isErrorRolePermissions = rolePermissionsQuery.isError;
 
-  // Effect to refetch role permissions and reset toggling state after mutation success
-  useEffect(() => {
-    if (assignPermissionToRole.isSuccess || revokePermissionFromRole.isSuccess) {
-      rolePermissionsQuery.refetch();
-      setTogglingPermissionId(null);
-    }
-    if (assignPermissionToRole.isError || revokePermissionFromRole.isError) {
-      setTogglingPermissionId(null);
-    }
-  }, [assignPermissionToRole.isSuccess, revokePermissionFromRole.isSuccess, assignPermissionToRole.isError, revokePermissionFromRole.isError, rolePermissionsQuery]);
+  // Operations
+  const { operationsQuery } = useOperationManager({ page: 1, perPage: 50 }, handleToast);
+  const operations = operationsQuery.data?.data || [];
 
-  // Function to handle toggling a permission
-  const handleTogglePermission = (permission: Permission, checked: boolean) => {
-    if (!role) {
-      handleToast("No role selected to assign permissions to.", "info");
-      return;
-    }
+  const isLoading = rolesQuery.isLoading || rolePermissionsQuery.isLoading || operationsQuery.isLoading;
+  const isError = rolesQuery.isError || rolePermissionsQuery.isError || operationsQuery.isError;
 
-    setTogglingPermissionId(permission.id);
+  // Toggle operation
+  const handleToggleOperation = (operation: Operation, checked: boolean) => {
+    if (!selectedRole) return handleToast("Please select a role first.", "info");
+    setTogglingOperationId(operation.id);
+
+    // ใช้ optional chaining ป้องกัน undefined
+    const permissionRecord = rolePermissions.find((p) => p.permission?.id === operation.id);
 
     const mutationOptions = {
-      onSuccess: () => {},
+      onSuccess: () => {
+        rolePermissionsQuery.refetch();
+        setTogglingOperationId(null);
+      },
       onError: (error: any) => {
+        console.error("Mutation error:", error);
         handleToast(`Failed to ${checked ? "assign" : "revoke"} permission: ${error.message || "Unknown error"}`, "error");
+        setTogglingOperationId(null);
       },
     };
 
     if (checked) {
-      assignPermissionToRole.mutate({ roleId: role.id, permissionId: permission.id }, mutationOptions);
+      if (!permissionRecord) {
+        assignPermissionToRole.mutate({ roleId: selectedRole.id, permissionId: operation.id }, mutationOptions);
+      } else {
+        handleToast("Permission already assigned.", "info");
+        setTogglingOperationId(null);
+      }
     } else {
-      revokePermissionFromRole.mutate({ roleId: role.id, permissionId: permission.id }, mutationOptions);
+      if (permissionRecord) {
+        revokePermissionFromRole.mutate({ roleId: selectedRole.id, permissionId: permissionRecord.permission!.id }, mutationOptions);
+      } else {
+        handleToast("Permission is not assigned to this role.", "info");
+        setTogglingOperationId(null);
+      }
     }
   };
 
-  if (!role) {
-    return <p className="text-gray-500 italic mt-4">Select a role from the list to manage its permissions.</p>;
-  }
+  // Columns
+  const columns: ColumnDef<AssetRow>[] = [
+    { accessorKey: "assetName", header: "Asset Name" },
+    ...(["create", "view", "edit", "delete"] as (keyof AssetRow)[]).map((opName) => ({
+      id: opName,
+      header: opName.charAt(0).toUpperCase() + opName.slice(1),
+      cell: ({ row }) => {
+        const op = row.original[opName];
+        if (!op) return null;
+
+        const isAssigned = rolePermissions.some((p) => p.permission?.id === op.id);
+        const isToggling = togglingOperationId === op.id;
+
+        return (
+          <div className="flex items-center justify-center">
+            <Checkbox checked={isAssigned} disabled={isToggling} onCheckedChange={(checked) => handleToggleOperation(op, checked as boolean)} />
+            {isToggling && <Spinner />}
+          </div>
+        );
+      },
+    })),
+  ];
+
+  // fetchPage for pagination
+  // fetchPage for pagination
+  const fetchPage = useCallback(
+    async (pageIndex: number, pageSize: number) => {
+      const assetMap: Record<string, AssetRow> = {};
+
+      operations.forEach((op) => {
+        const assetName = op.assetName || "Unknown";
+        if (!assetMap[assetName]) {
+          assetMap[assetName] = { assetName };
+        }
+
+        if (["create", "view", "edit", "delete"].includes(op.name)) {
+          assetMap[assetName][op.name as keyof AssetRow] = op;
+        }
+      });
+
+      const assetRows: AssetRow[] = Object.values(assetMap);
+
+      const start = pageIndex * pageSize;
+      const data = assetRows.slice(start, start + pageSize);
+      return { data, total: assetRows.length };
+    },
+    [operations]
+  );
 
   return (
-    <div className="p-4 max-w-3xl mx-auto border rounded-lg shadow-sm mt-6 bg-white">
-      {/* Tab headers */}
-      <div className="flex border-b mb-4 space-x-6">
-        <button className={`pb-2 border-b-4 ${activeTab === "info" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-600"} font-semibold`} onClick={() => setActiveTab("info")}>
-          Role Info
-        </button>
-        <button
-          className={`pb-2 border-b-4 ${activeTab === "permissions" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-600"} font-semibold`}
-          onClick={() => setActiveTab("permissions")}
-        >
-          Permissions
-        </button>
+    <div className="p-4  mx-auto rounded-lg shadow-sm mt-6 bg-white">
+      <div className="mb-4">
+        <label className="block mb-2 font-semibold">Select Role:</label>
+        {rolesQuery.isLoading ? (
+          <Spinner />
+        ) : rolesQuery.isError ? (
+          <p className="text-red-500">Failed to load roles.</p>
+        ) : (
+          <select className="border rounded p-2 w-full max-w-sm" value={selectedRoleId ?? ""} onChange={(e) => setSelectedRoleId(Number(e.target.value))}>
+            <option value="">-- Select a Role --</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
-      {/* Tab content */}
-      {activeTab === "info" && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Role Information</h2>
-          <p className="mb-2">
-            <strong>Role Name:</strong> <span className="font-mono text-lg">{role.name}</span>
-          </p>
-          <p className="mb-2">
-            <strong>Description:</strong> <span className="text-gray-700">{role.description || "No description provided."}</span>
-          </p>
-          {/* You might add other role details here, e.g., creation date, etc. */}
-        </section>
-      )}
-
-      {activeTab === "permissions" && (
-        <section>
-          <h2 className="text-xl font-semibold mb-4">
-            Manage Permissions for Role: <span className="font-mono">{role.name}</span>
-          </h2>
-
-          {/* Combined loading and error handling for permissions */}
-          {isLoadingAllPermissions || isLoadingRolePermissions ? (
-            <Spinner />
-          ) : isErrorAllPermissions ? (
-            <p className="text-red-500">Error loading all permissions. Please try again.</p>
-          ) : isErrorRolePermissions ? (
-            <p className="text-red-500">Error loading role's permissions. Please try again.</p>
-          ) : allPermissions.length === 0 ? (
-            <p className="text-gray-500 italic">No permissions available to assign.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[400px] overflow-auto pr-2">
-              {" "}
-              {/* Added max-height and overflow */}
-              {allPermissions.map((permission) => {
-                const isAssigned = rolePermissions.some((p) => p.id === permission.id);
-                const isTogglingThisPermission = togglingPermissionId === permission.id;
-                const isAnyMutationPending = assignPermissionToRole.isPending || revokePermissionFromRole.isPending;
-
-                return (
-                  <label key={permission.id} className="flex items-center gap-2 cursor-pointer select-none">
-                    <Checkbox checked={isAssigned} onCheckedChange={(checked) => handleTogglePermission(permission, checked as boolean)} disabled={isTogglingThisPermission || isAnyMutationPending} />
-
-                    <span>{permission.key}</span>
-                    {isTogglingThisPermission && <Spinner />}
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </section>
+      {!selectedRole ? (
+        <p className="text-gray-500 italic mt-4">Select a role to manage its permissions.</p>
+      ) : isLoading ? (
+        <Spinner />
+      ) : isError ? (
+        <p className="text-red-500">Error loading data. Please try again.</p>
+      ) : (
+        <DataTable<AssetRow> columns={columns} fetchPage={fetchPage} initialPageSize={10} pageSizes={[5, 10, 20]} />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

@@ -5,10 +5,9 @@ import { RolePermissionManager } from "./RolePermission/RolePermissionManager";
 import PermissionPage from "./Permission/PermissionPage";
 import { AdminLayout } from "@Layouts/AdminLayout";
 import AssetPage from "./Asset/AssetPage";
-import { Role } from "@Types/competency/rbacTypes";
+
 const AdminRbacPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"roles" | "userRoles" | "assets" | "permissions" | "assetPage">("roles");
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [activeTab, setActiveTab] = useState<"roles" | "rolePermissions" | "permissions" | "assets">("roles");
 
   return (
     <AdminLayout>
@@ -17,51 +16,41 @@ const AdminRbacPage: React.FC = () => {
 
         {/* Tab Headers */}
         <div className="flex border-b mb-6 space-x-6">
-          {" "}
-          {/* Added overflow for many tabs */}
           <button className={`pb-2 border-b-4 ${activeTab === "roles" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`} onClick={() => setActiveTab("roles")}>
-            Roles & Permissions
+            Roles
           </button>
+
           <button
-            className={`pb-2 border-b-4 ${activeTab === "userRoles" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`}
-            onClick={() => setActiveTab("userRoles")}
+            className={`pb-2 border-b-4 ${activeTab === "rolePermissions" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`}
+            onClick={() => setActiveTab("rolePermissions")}
           >
-            User Role Assignment
+            Role Permissions
           </button>
-          <button
-            className={`pb-2 border-b-4 ${activeTab === "assets" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`}
-            onClick={() => setActiveTab("assets")}
-          >
-            Asset Permissions
-          </button>
+
           <button
             className={`pb-2 border-b-4 ${activeTab === "permissions" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`}
             onClick={() => setActiveTab("permissions")}
           >
-            All Permissions
+            Permissions
           </button>
+
           <button
-            className={`pb-2 border-b-4 ${activeTab === "assetPage" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`}
-            onClick={() => setActiveTab("assetPage")}
+            className={`pb-2 border-b-4 ${activeTab === "assets" ? "border-blue-600 text-blue-600" : "border-transparent"} font-semibold whitespace-nowrap`}
+            onClick={() => setActiveTab("assets")}
           >
-            {" "}
-            {/* Renamed tab */}
-            Asset Management
+            Asset Access
           </button>
         </div>
 
         {/* Tab Content */}
         <div>
-          {activeTab === "roles" && (
-            <>
-              <RolePage onSelectRole={setSelectedRole} />
-              {selectedRole && <RolePermissionManager role={selectedRole} />}
-            </>
-          )}
-          {/* {activeTab === "userRoles" && <UserRoleAssignmentPage />}
-           */}
+          {activeTab === "roles" && <RolePage />}
+
+          {activeTab === "rolePermissions" && <RolePermissionManager />}
+
           {activeTab === "permissions" && <PermissionPage />}
-          {activeTab === "assetPage" && <AssetPage />}
+
+          {activeTab === "assets" && <AssetPage />}
         </div>
       </div>
     </AdminLayout>

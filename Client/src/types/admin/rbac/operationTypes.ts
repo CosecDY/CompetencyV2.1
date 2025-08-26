@@ -4,6 +4,7 @@ export interface Operation {
   description?: string | null;
   createdAt: string;
   updatedAt: string;
+  assetId: number;
 }
 
 export interface OperationPageResult {

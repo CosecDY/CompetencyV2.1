@@ -5,11 +5,7 @@ import { useRoleManager } from "@Hooks/admin/rbac/useRoleManager";
 import { Role, CreateRoleDto, UpdateRoleDto } from "@Types/competency/rbacTypes";
 import { AddEditRoleModal, DeleteRoleModal } from "./AddEditRoleModal";
 
-interface RolePageProps {
-  onSelectRole: (role: Role | null) => void;
-}
-
-export default function RolePage({ onSelectRole }: RolePageProps) {
+export default function RolePage() {
   const [searchText, setSearchText] = useState<string>("");
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>("");
   const [modalType, setModalType] = useState<"add" | "edit" | "delete" | null>(null);
@@ -33,23 +29,22 @@ export default function RolePage({ onSelectRole }: RolePageProps) {
 
   const openAddModal = () => {
     setSelectedRoleInternal(null);
-    onSelectRole(null);
+
     setModalType("add");
   };
   const openEditModal = (role: Role) => {
     setSelectedRoleInternal(role);
-    onSelectRole(role);
+
     setModalType("edit");
   };
   const openDeleteModal = (role: Role) => {
     setSelectedRoleInternal(role);
-    onSelectRole(role);
+
     setModalType("delete");
   };
   const closeModal = () => {
     setModalType(null);
     setSelectedRoleInternal(null);
-    onSelectRole(null);
   };
 
   const confirmAdd = (name: string, description?: string) => {
@@ -108,7 +103,7 @@ export default function RolePage({ onSelectRole }: RolePageProps) {
         ),
       },
     ],
-    [onSelectRole]
+    []
   );
 
   return (
