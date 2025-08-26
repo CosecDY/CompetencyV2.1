@@ -1,10 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 
-export const useCompetencyActions = (
-  source?: string,
-  id?: string,
-  competencyTitle?: string
-) => {
+export const useCompetencyActions = (source?: string, id?: string, competencyTitle?: string) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [showTooltip, setShowTooltip] = useState<string | null>(null);
@@ -13,12 +9,8 @@ export const useCompetencyActions = (
   useEffect(() => {
     if (source && id) {
       const competencyKey = `${source}-${id}`;
-      const bookmarks = JSON.parse(
-        localStorage.getItem("competency-bookmarks") ?? "[]"
-      );
-      const favorites = JSON.parse(
-        localStorage.getItem("competency-favorites") ?? "[]"
-      );
+      const bookmarks = JSON.parse(localStorage.getItem("competency-bookmarks") ?? "[]");
+      const favorites = JSON.parse(localStorage.getItem("competency-favorites") ?? "[]");
 
       setIsBookmarked(bookmarks.includes(competencyKey));
       setIsFavorited(favorites.includes(competencyKey));
@@ -28,9 +20,7 @@ export const useCompetencyActions = (
   const handleBookmark = useCallback(() => {
     setIsBookmarked((prev) => {
       const newValue = !prev;
-      const bookmarks = JSON.parse(
-        localStorage.getItem("competency-bookmarks") ?? "[]"
-      );
+      const bookmarks = JSON.parse(localStorage.getItem("competency-bookmarks") ?? "[]");
       const competencyKey = `${source}-${id}`;
 
       if (newValue) {
@@ -52,9 +42,7 @@ export const useCompetencyActions = (
   const handleFavorite = useCallback(() => {
     setIsFavorited((prev) => {
       const newValue = !prev;
-      const favorites = JSON.parse(
-        localStorage.getItem("competency-favorites") ?? "[]"
-      );
+      const favorites = JSON.parse(localStorage.getItem("competency-favorites") ?? "[]");
       const competencyKey = `${source}-${id}`;
 
       if (newValue) {

@@ -1,14 +1,6 @@
 import { useState, useCallback } from "react";
-import {
-  fetchSfiaSkillDetailByCode,
-  SfiaSkillResponse,
-  APIError,
-} from "../../services/competencyDetailAPI";
-import {
-  CompetencyDetailState,
-  UseCompetencyDetailOptions,
-  DEFAULT_OPTIONS,
-} from "../types";
+import { fetchSfiaSkillDetailByCode, SfiaSkillResponse, APIError } from "../../services/competencyDetailAPI";
+import { CompetencyDetailState, UseCompetencyDetailOptions, DEFAULT_OPTIONS } from "../types";
 import { useCompetencyCache } from "../utils/useCompetencyCache";
 import { useRetryLogic } from "../utils/useRetryLogic";
 
@@ -27,25 +19,10 @@ export function useSfiaSkillDetail(options: UseCompetencyDetailOptions = {}) {
   });
 
   // Cache management
-  const {
-    getFromCache,
-    setCache,
-    clearCache: clearCacheUtility,
-    isInCache,
-    getCacheKey,
-  } = useCompetencyCache(opts.cacheDuration);
+  const { getFromCache, setCache, clearCache: clearCacheUtility, isInCache, getCacheKey } = useCompetencyCache(opts.cacheDuration);
 
   // Retry logic
-  const {
-    executeWithRetry,
-    getRetryAttempts: getRetryAttemptsUtility,
-    clearRetryTracking,
-  } = useRetryLogic(
-    opts.maxRetries,
-    opts.retryDelay,
-    opts.autoRetryOnNetworkError,
-    getCacheKey
-  );
+  const { executeWithRetry, getRetryAttempts: getRetryAttemptsUtility, clearRetryTracking } = useRetryLogic(opts.maxRetries, opts.retryDelay, opts.autoRetryOnNetworkError, getCacheKey);
 
   /**
    * Fetch SFIA skill detail with retry logic
@@ -67,11 +44,7 @@ export function useSfiaSkillDetail(options: UseCompetencyDetailOptions = {}) {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const data = await executeWithRetry(
-          () => fetchSfiaSkillDetailByCode(skillCode),
-          "sfia",
-          skillCode
-        );
+        const data = await executeWithRetry(() => fetchSfiaSkillDetailByCode(skillCode), "sfia", skillCode);
 
         // Store in cache
         setCache("sfia", skillCode, data);
@@ -83,10 +56,7 @@ export function useSfiaSkillDetail(options: UseCompetencyDetailOptions = {}) {
           lastFetched: new Date(),
         });
       } catch (error) {
-        const apiError =
-          error instanceof APIError
-            ? error
-            : new APIError("Unknown error occurred");
+        const apiError = error instanceof APIError ? error : new APIError("Unknown error occurred");
         setState({
           data: null,
           loading: false,

@@ -3,21 +3,14 @@ import Layout from "@Layouts/Layout";
 import { WhiteTealBackground } from "@Components/Common/Background/WhiteTealBackground";
 import AuthContext from "@Contexts/AuthContext";
 import useProfile from "@Hooks/useProfile";
-import {
-  ProfileHeader,
-  ConfirmationDialog,
-  SuccessToast,
-  AuthStates,
-  ProfileForm,
-} from "./Components";
+import { ProfileHeader, ConfirmationDialog, SuccessToast, AuthStates, ProfileForm } from "./Components";
 import "./ProfilePage.css";
 
 const ProfilePage = () => {
   const auth = useContext(AuthContext);
 
   // Get the same firstName that ProfileDisplay uses for consistency
-  const userFirstName =
-    auth?.user?.firstName || auth?.user?.email?.split("@")[0] || "User";
+  const userFirstName = auth?.user?.firstName || auth?.user?.email?.split("@")[0] || "User";
 
   // Dialog and toast states
   const [showDialog, setShowDialog] = useState(false);
@@ -25,18 +18,7 @@ const ProfilePage = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Use the profile hook
-  const {
-    formData,
-    loading,
-    saving,
-    error,
-    lastUpdated,
-    loadProfile,
-    updateFormData,
-    saveProfile,
-    validateForm,
-    clearError,
-  } = useProfile({
+  const { formData, loading, saving, error, lastUpdated, loadProfile, updateFormData, saveProfile, validateForm, clearError } = useProfile({
     onSaveSuccess: (data) => {
       console.log("Profile saved successfully:", data);
       setShowToast(true);
@@ -56,29 +38,27 @@ const ProfilePage = () => {
 
   // Load profile data only after auth is initialized and user is authenticated
   useEffect(() => {
-    if (!auth?.isLoading && auth?.user && auth?.accessToken) {
+    if (!auth?.loading && auth?.user) {
       loadProfile().catch(console.error);
     }
-  }, [auth?.isLoading, auth?.user, auth?.accessToken, loadProfile]);
+  }, [auth?.loading, auth?.user, loadProfile]);
 
-  const handleInputChange =
-    (field: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      updateFormData(field as keyof typeof formData, e.target.value);
+  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    updateFormData(field as keyof typeof formData, e.target.value);
 
-      // Clear error when user starts typing
-      if (errors[field]) {
-        setErrors((prev) => ({
-          ...prev,
-          [field]: "",
-        }));
-      }
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
 
-      // Clear general error
-      if (error) {
-        clearError();
-      }
-    };
+    // Clear general error
+    if (error) {
+      clearError();
+    }
+  };
 
   const handleSave = () => {
     const validationErrors = validateForm();
@@ -103,29 +83,16 @@ const ProfilePage = () => {
       <WhiteTealBackground>
         <div className="container mx-auto px-4 py-16">
           {/* Auth and Loading States */}
-          <AuthStates
-            isAuthLoading={!!auth?.isLoading}
-            isAuthenticated={!!auth?.user}
-            isProfileLoading={loading}
-            error={error}
-            onRetry={() => loadProfile().catch(console.error)}
-          />
+          <AuthStates isAuthLoading={!!auth?.loading} isAuthenticated={!!auth?.user} isProfileLoading={loading} error={error} onRetry={() => loadProfile().catch(console.error)} />
 
           {/* Profile Content - Only show when ready */}
-          {!auth?.isLoading && auth?.user && !loading && !error && (
+          {!auth?.loading && auth?.user && !loading && !error && (
             <>
               {/* Header Section */}
               <ProfileHeader lastUpdated={lastUpdated} />
 
               {/* Main Profile Form */}
-              <ProfileForm
-                userFirstName={userFirstName}
-                formData={formData}
-                errors={errors}
-                saving={saving}
-                onInputChange={handleInputChange}
-                onSave={handleSave}
-              />
+              <ProfileForm userFirstName={userFirstName} formData={formData} errors={errors} saving={saving} onInputChange={handleInputChange} onSave={handleSave} />
             </>
           )}
         </div>
@@ -140,11 +107,7 @@ const ProfilePage = () => {
         message="คุณต้องการบันทึกการเปลี่ยนแปลงข้อมูลส่วนบุคคลนี้ใช่หรือไม่?"
       />
 
-      <SuccessToast
-        isVisible={showToast}
-        message="บันทึกข้อมูลสำเร็จ!"
-        onClose={() => setShowToast(false)}
-      />
+      <SuccessToast isVisible={showToast} message="บันทึกข้อมูลสำเร็จ!" onClose={() => setShowToast(false)} />
     </Layout>
   );
 };

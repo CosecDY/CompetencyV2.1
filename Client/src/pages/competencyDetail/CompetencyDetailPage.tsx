@@ -16,20 +16,9 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  motion,
-  AnimatePresence,
-  LazyMotion,
-  domAnimation,
-  useReducedMotion,
-} from "framer-motion";
+import { motion, AnimatePresence, LazyMotion, domAnimation, useReducedMotion } from "framer-motion";
 import Layout from "@Layouts/Layout";
-import {
-  useSfiaSkillDetail,
-  useTpqiUnitDetail,
-  useAnimationVariants,
-  useCompetencyActions,
-} from "./hooks";
+import { useSfiaSkillDetail, useTpqiUnitDetail, useAnimationVariants, useCompetencyActions } from "./hooks";
 import { useCompetencyDetailError } from "./hooks/competency/useCompetencyDetailError";
 import { sanitizeUrlParams, isMalformedParam } from "@Utils/errorHandler";
 
@@ -91,9 +80,7 @@ const CompetencyDetailPage: React.FC = () => {
   const idIsMalformed = id && isMalformedParam(id);
 
   // Use original params if they're not malformed, otherwise try to sanitize
-  const finalSource = sourceIsMalformed
-    ? sanitizeUrlParams({ source }).source
-    : source;
+  const finalSource = sourceIsMalformed ? sanitizeUrlParams({ source }).source : source;
   const finalId = idIsMalformed ? sanitizeUrlParams({ id }).id : id;
 
   const isValidSource = finalSource === "sfia" || finalSource === "tpqi";
@@ -138,13 +125,9 @@ const CompetencyDetailPage: React.FC = () => {
    * Modified animation variants that respect reduced motion preferences
    * @type {object}
    */
-  const accessibleContainerVariants = prefersReducedMotion
-    ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
-    : containerVariants;
+  const accessibleContainerVariants = prefersReducedMotion ? { hidden: { opacity: 1 }, visible: { opacity: 1 } } : containerVariants;
 
-  const accessibleItemVariants = prefersReducedMotion
-    ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
-    : itemVariants;
+  const accessibleItemVariants = prefersReducedMotion ? { hidden: { opacity: 1 }, visible: { opacity: 1 } } : itemVariants;
 
   /**
    * Error management utility for competency detail operations
@@ -231,12 +214,7 @@ const CompetencyDetailPage: React.FC = () => {
    * @return { string } The competency title for display in the header
    * @memoized Recalculates only when `competencyData` or `validatedSource` changes
    */
-  const competencyTitle = useMemo(
-    () =>
-      competencyData?.competency?.competency_name ??
-      `${validatedSource?.toUpperCase()} Competency`,
-    [competencyData?.competency?.competency_name, validatedSource]
-  );
+  const competencyTitle = useMemo(() => competencyData?.competency?.competency_name ?? `${validatedSource?.toUpperCase()} Competency`, [competencyData?.competency?.competency_name, validatedSource]);
 
   /**
    * Memoized quick navigation items based on the framework source
@@ -272,17 +250,11 @@ const CompetencyDetailPage: React.FC = () => {
    * @return { Function } Function to get the framework icon
    * @return { Function } Function to get the framework color
    */
-  const {
-    isBookmarked,
-    isFavorited,
-    showTooltip,
-    setShowTooltip,
-    handleBookmark,
-    handleFavorite,
-    handleShare,
-    handlePrint,
-    handleDownload,
-  } = useCompetencyActions(validatedSource, validatedId, competencyTitle);
+  const { isBookmarked, isFavorited, showTooltip, setShowTooltip, handleBookmark, handleFavorite, handleShare, handlePrint, handleDownload } = useCompetencyActions(
+    validatedSource,
+    validatedId,
+    competencyTitle
+  );
 
   /**
    * Effect hook to fetch competency data when the component mounts
@@ -318,8 +290,7 @@ const CompetencyDetailPage: React.FC = () => {
   useEffect(() => {
     if (error) {
       addError({
-        message:
-          typeof error === "string" ? error : "Failed to fetch competency data",
+        message: typeof error === "string" ? error : "Failed to fetch competency data",
         source: validatedSource ?? "unknown",
       });
     }
@@ -364,14 +335,7 @@ const CompetencyDetailPage: React.FC = () => {
     } catch (err) {
       console.error("Retry failed:", err);
     }
-  }, [
-    clearErrors,
-    resetState,
-    validatedSource,
-    validatedId,
-    sfiaHook,
-    tpqiHook,
-  ]);
+  }, [clearErrors, resetState, validatedSource, validatedId, sfiaHook, tpqiHook]);
 
   // Validate URL parameters
   if (!isValidSource || !isValidId) {
@@ -390,38 +354,15 @@ const CompetencyDetailPage: React.FC = () => {
           <LazyMotion features={domAnimation}>
             <AnimatePresence mode="wait">
               {loading && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center min-h-96"
-                >
-                  <LoadingState
-                    source={validatedSource || ""}
-                    id={validatedId || ""}
-                  />
+                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center min-h-96">
+                  <LoadingState source={validatedSource || ""} id={validatedId || ""} />
                 </motion.div>
               )}
 
-              {!loading && error && (
-                <ErrorState
-                  error={error}
-                  source={validatedSource || ""}
-                  id={validatedId || ""}
-                  retryCount={retryCount}
-                  onRetry={handleRetry}
-                  onGoBack={() => navigate(-1)}
-                />
-              )}
+              {!loading && error && <ErrorState error={error} source={validatedSource || ""} id={validatedId || ""} retryCount={retryCount} onRetry={handleRetry} onGoBack={() => navigate(-1)} />}
 
               {!loading && !error && competencyData && (
-                <motion.div
-                  key="success"
-                  variants={accessibleContainerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
+                <motion.div key="success" variants={accessibleContainerVariants} initial="hidden" animate="visible">
                   <PageHeader
                     source={validatedSource || ""}
                     id={validatedId || ""}
@@ -445,33 +386,15 @@ const CompetencyDetailPage: React.FC = () => {
 
                   {/* Content Section */}
                   <motion.div variants={itemVariants} className="space-y-8">
-                    {validatedSource === "sfia" &&
-                      "competency" in competencyData &&
-                      competencyData.competency && (
-                        <SfiaSection competency={competencyData.competency} />
-                      )}
-                    {validatedSource === "tpqi" &&
-                      "competency" in competencyData &&
-                      competencyData.competency && (
-                        <TpqiContainer competency={competencyData.competency} />
-                      )}
+                    {validatedSource === "sfia" && "competency" in competencyData && competencyData.competency && <SfiaSection competency={competencyData.competency} />}
+                    {validatedSource === "tpqi" && "competency" in competencyData && competencyData.competency && <TpqiContainer competency={competencyData.competency} />}
                   </motion.div>
 
-                  <PageFooter
-                    source={validatedSource || ""}
-                    lastFetched={lastFetched}
-                    itemVariants={itemVariants}
-                  />
+                  <PageFooter source={validatedSource || ""} lastFetched={lastFetched} itemVariants={itemVariants} />
                 </motion.div>
               )}
 
-              {!loading && !error && !competencyData && lastFetched && (
-                <NoDataState
-                  source={validatedSource || ""}
-                  id={validatedId || ""}
-                  onGoBack={() => navigate(-1)}
-                />
-              )}
+              {!loading && !error && !competencyData && lastFetched && <NoDataState source={validatedSource || ""} id={validatedId || ""} onGoBack={() => navigate(-1)} />}
             </AnimatePresence>
           </LazyMotion>
         </div>

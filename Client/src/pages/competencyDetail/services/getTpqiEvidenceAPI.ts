@@ -1,4 +1,4 @@
-import api from "@/services/api";
+import api from "@Services/api";
 
 export interface TpqiEvidenceData {
   skills?: { [skillId: number]: { evidenceUrl: string; approvalStatus: string | null } };
@@ -22,14 +22,14 @@ export class TpqiEvidenceService {
   async getEvidence(unitCode: string): Promise<TpqiEvidenceApiResponse> {
     try {
       const response = await api.get(`/tpqi/evidence/${unitCode}`);
-      
+
       return {
         success: true,
         message: response.data.message || "Evidence fetched successfully",
         data: response.data.data,
       };
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
+      if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as { response?: { data?: { message?: string }; statusText?: string } };
         const errorMessage = axiosError.response?.data?.message || axiosError.response?.statusText;
         throw new Error(errorMessage || "Failed to fetch evidence");

@@ -1,68 +1,28 @@
 import { SubmitTpqiEvidenceRequest, TpqiApiResponse as ApiResponse } from "../types/tpqi";
-
+import api from "@Services/api";
+import { AxiosError } from "axios";
 /**
  * Service class for managing TPQI evidence submissions.
- * Handles authenticated API requests and basic client-side validations.
+ * Handles API requests and basic client-side validations.
  */
 export class TpqiEvidenceService {
-  private readonly baseApiUrl: string;
-  private readonly accessToken: string | null;
-
-  /**
-   * Creates an instance of TpqiEvidenceService.
-   *
-   * @param baseApiUrl - The base URL of the backend API.
-   * @param accessToken - The Bearer token for authenticated API access.
-   */
-  constructor(baseApiUrl: string, accessToken: string | null) {
-    this.baseApiUrl = baseApiUrl;
-    this.accessToken = accessToken;
-  }
-
   /**
    * Submits evidence data to the backend API.
    *
    * @param request - The evidence data conforming to SubmitTpqiEvidenceRequest.
    * @returns A promise resolving to ApiResponse indicating the result.
-   * @throws Error if the user is unauthenticated or the API request fails.
+   * @throws Error if the API request fails.
    */
   async submitEvidence(request: SubmitTpqiEvidenceRequest): Promise<ApiResponse> {
-    console.log(request);
-    if (!this.accessToken) {
-      throw new Error("User is not authenticated");
-    }
-
-    const response = await fetch(`${this.baseApiUrl}/api/tpqi/evidence`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.accessToken}`,
-      },
-      body: JSON.stringify(request),
-    });
-
-    let result;
     try {
-      result = await response.json();
-    } catch (e) {
-      if (response.ok) {
-        result = { success: true, message: "Evidence submitted successfully" };
-      } else {
-        console.error("Error parsing response JSON:", e);
-        result = {
-          success: false,
-          message: `HTTP ${response.status}: ${response.statusText}`,
-        };
-      }
-    }
+      const response = await api.post<ApiResponse>("/tpqi/evidence", request);
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      const message = axiosError.response?.data?.message || axiosError.message || "Failed to submit evidence";
 
-    if (!response.ok) {
-      throw new Error(
-        result.message || `HTTP ${response.status}: ${response.statusText}`
-      );
+      throw new Error(message);
     }
-
-    return result;
   }
 
   /**

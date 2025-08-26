@@ -1,12 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import { useAuth } from "@Contexts/AuthContext";
-import {
-  TpqiEvidenceService,
-  SubmitTpqiEvidenceRequest,
-  ApiResponse,
-} from "../../services/postTpqiEvidenceAPI";
+import { TpqiEvidenceService } from "../../services/postTpqiEvidenceAPI";
 import { DeleteTpqiEvidenceService } from "../../services/deleteTpqiEvidenceAPI";
-
+import { SubmitTpqiEvidenceRequest, TpqiApiResponse as ApiResponse } from "../../types/tpqi";
 /**
  * Interface for TPQI evidence state management
  */
@@ -126,14 +121,12 @@ export const useTpqiEvidenceSender = () => {
 
         // Initialize knowledge
         if (evidenceData.knowledge) {
-          Object.entries(evidenceData.knowledge).forEach(
-            ([knowledgeId, data]) => {
-              const key = `knowledge-${knowledgeId}`;
-              newUrls[key] = data.evidenceUrl || "";
-              newSubmitted[key] = !!data.evidenceUrl;
-              newApprovalStatus[key] = data.approvalStatus || "NOT_APPROVED";
-            }
-          );
+          Object.entries(evidenceData.knowledge).forEach(([knowledgeId, data]) => {
+            const key = `knowledge-${knowledgeId}`;
+            newUrls[key] = data.evidenceUrl || "";
+            newSubmitted[key] = !!data.evidenceUrl;
+            newApprovalStatus[key] = data.approvalStatus || "NOT_APPROVED";
+          });
         }
 
         return {
@@ -147,23 +140,12 @@ export const useTpqiEvidenceSender = () => {
     []
   );
 
-  // Get authentication token from context
-  const { accessToken } = useAuth();
-
-  const baseApi = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-
   /**
    * Service instances for API calls - memoized to prevent unnecessary re-creation
    */
-  const evidenceService = useMemo(
-    () => new TpqiEvidenceService(baseApi, accessToken),
-    [baseApi, accessToken]
-  );
+  const evidenceService = useMemo(() => new TpqiEvidenceService(), []);
 
-  const deleteService = useMemo(
-    () => new DeleteTpqiEvidenceService(baseApi, accessToken),
-    [baseApi, accessToken]
-  );
+  const deleteService = useMemo(() => new DeleteTpqiEvidenceService(), []);
 
   /**
    * Generate a unique key for evidence tracking
@@ -260,18 +242,6 @@ export const useTpqiEvidenceSender = () => {
       return;
     }
 
-    // Step 2: Check authentication
-    if (!accessToken) {
-      setEvidenceState((prev) => ({
-        ...prev,
-        errors: {
-          ...prev.errors,
-          [key]: "Please log in to submit evidence.",
-        },
-      }));
-      return;
-    }
-
     // Step 3: Set loading state and clear errors
     setEvidenceState((prev) => ({
       ...prev,
@@ -293,9 +263,7 @@ export const useTpqiEvidenceSender = () => {
       }
 
       // Step 5: Submit to API
-      const response: ApiResponse = await evidenceService.submitEvidence(
-        evidenceRequest
-      );
+      const response: ApiResponse = await evidenceService.submitEvidence(evidenceRequest);
 
       if (response.success) {
         // Success: Mark as submitted
@@ -320,10 +288,7 @@ export const useTpqiEvidenceSender = () => {
     } catch (error: unknown) {
       // Network or other errors
       console.error("Error submitting TPQI evidence:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to submit evidence. Please try again.";
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit evidence. Please try again.";
 
       setEvidenceState((prev) => ({
         ...prev,
@@ -363,7 +328,7 @@ export const useTpqiEvidenceSender = () => {
     const url = evidenceState.urls[key];
     const loading = evidenceState.loading[key];
 
-    return !!(url?.trim() && !loading && accessToken);
+    return !!(url?.trim() && !loading);
   };
 
   /**
@@ -392,15 +357,6 @@ export const useTpqiEvidenceSender = () => {
       return false;
     }
 
-    // Check authentication
-    if (!accessToken) {
-      setEvidenceState((prev) => ({
-        ...prev,
-        errors: { ...prev.errors, [key]: "Authentication required. Please log in again." },
-      }));
-      return false;
-    }
-
     try {
       // Set deleting state
       setEvidenceState((prev) => ({
@@ -419,7 +375,7 @@ export const useTpqiEvidenceSender = () => {
 
       if (result.success) {
         console.log(`✅ ${evidence.type} evidence deleted successfully:`, result.data);
-        
+
         // Clear evidence from state after successful deletion
         setEvidenceState((prev) => ({
           ...prev,
@@ -428,7 +384,7 @@ export const useTpqiEvidenceSender = () => {
           approvalStatus: { ...prev.approvalStatus, [key]: "" },
           errors: { ...prev.errors, [key]: "" },
         }));
-        
+
         return true;
       } else {
         const errorMessage = result.message || `Failed to delete ${evidence.type} evidence`;
@@ -476,8 +432,3 @@ export const useTpqiEvidenceSender = () => {
     isDeleting,
   };
 };
-
-/**
- * Export types for external use
- */
-export type { EvidenceType, TpqiEvidenceState };

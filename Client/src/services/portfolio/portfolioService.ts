@@ -1,11 +1,5 @@
-import {
-  GetSfiaSummaryService,
-  SfiaSummaryStats,
-} from "../sfia/getSfiaSummaryAPI";
-import {
-  GetTpqiSummaryService,
-  TpqiSummaryStats,
-} from "../tpqi/getTpqiSummaryAPI";
+import { GetSfiaSummaryService, SfiaSummaryStats } from "../sfia/getSfiaSummaryAPI";
+import { GetTpqiSummaryService, TpqiSummaryStats } from "../tpqi/getTpqiSummaryAPI";
 import { PortfolioData } from "../../types/portfolio";
 
 /**
@@ -30,22 +24,12 @@ export interface CompletePortfolioData {
  * Coordinates between SFIA and TPQI services to provide unified portfolio information.
  */
 export class PortfolioService {
-  private readonly baseApiUrl: string;
-  private readonly accessToken: string | null;
   private readonly sfiaService: GetSfiaSummaryService;
   private readonly tpqiService: GetTpqiSummaryService;
 
-  /**
-   * Creates an instance of PortfolioService.
-   *
-   * @param baseApiUrl - The base URL of the backend API.
-   * @param accessToken - The Bearer token for authenticated API access.
-   */
-  constructor(baseApiUrl: string, accessToken: string | null) {
-    this.baseApiUrl = baseApiUrl;
-    this.accessToken = accessToken;
-    this.sfiaService = new GetSfiaSummaryService(baseApiUrl, accessToken);
-    this.tpqiService = new GetTpqiSummaryService(baseApiUrl, accessToken);
+  constructor() {
+    this.sfiaService = new GetSfiaSummaryService();
+    this.tpqiService = new GetTpqiSummaryService();
   }
 
   /**
@@ -54,15 +38,10 @@ export class PortfolioService {
    * @param userEmail - The user's email address for the portfolio
    * @returns Promise<CompletePortfolioData> - Complete portfolio data
    */
-  async getCompletePortfolioData(
-    userEmail: string
-  ): Promise<CompletePortfolioData> {
+  async getCompletePortfolioData(userEmail: string): Promise<CompletePortfolioData> {
     try {
       // Fetch both SFIA and TPQI data in parallel
-      const [sfiaResponse, tpqiResponse] = await Promise.allSettled([
-        this.sfiaService.getUserSummary(),
-        this.tpqiService.getUserSummary(),
-      ]);
+      const [sfiaResponse, tpqiResponse] = await Promise.allSettled([this.sfiaService.getUserSummary(), this.tpqiService.getUserSummary()]);
 
       // Process SFIA data
       let sfiaSummary: SfiaSummaryStats | null = null;
@@ -70,12 +49,7 @@ export class PortfolioService {
         sfiaSummary = sfiaResponse.value.data || null;
         console.log("Fetched SFIA summary:", sfiaSummary);
       } else {
-        console.warn(
-          "Failed to fetch SFIA summary:",
-          sfiaResponse.status === "rejected"
-            ? sfiaResponse.reason
-            : "API returned no data"
-        );
+        console.warn("Failed to fetch SFIA summary:", sfiaResponse.status === "rejected" ? sfiaResponse.reason : "API returned no data");
       }
 
       // Process TPQI data
@@ -83,12 +57,7 @@ export class PortfolioService {
       if (tpqiResponse.status === "fulfilled" && tpqiResponse.value.success) {
         tpqiSummary = tpqiResponse.value.data || null;
       } else {
-        console.warn(
-          "Failed to fetch TPQI summary:",
-          tpqiResponse.status === "rejected"
-            ? tpqiResponse.reason
-            : "API returned no data"
-        );
+        console.warn("Failed to fetch TPQI summary:", tpqiResponse.status === "rejected" ? tpqiResponse.reason : "API returned no data");
       }
 
       // Calculate overall statistics
@@ -194,10 +163,7 @@ export class PortfolioService {
    * @param tpqiSummary - TPQI summary data
    * @returns Overall statistics object
    */
-  private calculateOverallStats(
-    sfiaSummary: SfiaSummaryStats | null,
-    tpqiSummary: TpqiSummaryStats | null
-  ) {
+  private calculateOverallStats(sfiaSummary: SfiaSummaryStats | null, tpqiSummary: TpqiSummaryStats | null) {
     return {
       totalSfiaSkills: sfiaSummary?.totalSkills || 0,
       totalTpqiCareers: tpqiSummary?.totalCareers || 0,
@@ -216,16 +182,6 @@ export class PortfolioService {
     isValid: boolean;
     error?: string;
   } {
-    const sfiaValidation = this.sfiaService.validateServiceConfig();
-    if (!sfiaValidation.isValid) {
-      return sfiaValidation;
-    }
-
-    const tpqiValidation = this.tpqiService.validateServiceConfig();
-    if (!tpqiValidation.isValid) {
-      return tpqiValidation;
-    }
-
     return {
       isValid: true,
     };
@@ -238,10 +194,7 @@ export class PortfolioService {
    * @returns boolean indicating if portfolio has data
    */
   hasPortfolioData(portfolioData: CompletePortfolioData): boolean {
-    return (
-      (portfolioData.sfiaSummary?.skillSummaries?.length ?? 0) > 0 ||
-      (portfolioData.tpqiSummary?.careerSummaries?.length ?? 0) > 0
-    );
+    return (portfolioData.sfiaSummary?.skillSummaries?.length ?? 0) > 0 || (portfolioData.tpqiSummary?.careerSummaries?.length ?? 0) > 0;
   }
 
   /**
@@ -256,41 +209,26 @@ export class PortfolioService {
     // SFIA recommendations
     if (portfolioData.sfiaSummary?.averagePercent !== undefined) {
       if (portfolioData.sfiaSummary.averagePercent < 50) {
-        recommendations.push(
-          "ควรเน้นการพัฒนาทักษะ SFIA ให้ถึงระดับความชำนาญขั้นกลาง"
-        );
+        recommendations.push("ควรเน้นการพัฒนาทักษะ SFIA ให้ถึงระดับความชำนาญขั้นกลาง");
       }
       if ((portfolioData.sfiaSummary.totalSkills ?? 0) < 5) {
-        recommendations.push(
-          "ขยายพอร์ตโฟลิโอทักษะของคุณโดยการสำรวจและพัฒนาสมรรถนะ SFIA เพิ่มเติม"
-        );
+        recommendations.push("ขยายพอร์ตโฟลิโอทักษะของคุณโดยการสำรวจและพัฒนาสมรรถนะ SFIA เพิ่มเติม");
       }
     }
 
     // TPQI recommendations
     if (portfolioData.tpqiSummary?.averageSkillPercent !== undefined) {
-      const tpqiBalance = this.tpqiService.analyzeSkillKnowledgeBalance(
-        portfolioData.tpqiSummary
-      );
+      const tpqiBalance = this.tpqiService.analyzeSkillKnowledgeBalance(portfolioData.tpqiSummary);
       if (tpqiBalance.recommendedFocus === "skills") {
-        recommendations.push(
-          "ความรู้ของคุณแข็งแกร่งมาก ควรพัฒนาทักษะปฏิบัติเพื่อเสริมความเข้าใจทางทฤษฎี"
-        );
+        recommendations.push("ความรู้ของคุณแข็งแกร่งมาก ควรพัฒนาทักษะปฏิบัติเพื่อเสริมความเข้าใจทางทฤษฎี");
       } else if (tpqiBalance.recommendedFocus === "knowledge") {
-        recommendations.push(
-          "ทักษะปฏิบัติของคุณดีมาก ควรเสริมสร้างพื้นฐานความรู้ทางทฤษฎี"
-        );
+        recommendations.push("ทักษะปฏิบัติของคุณดีมาก ควรเสริมสร้างพื้นฐานความรู้ทางทฤษฎี");
       }
     }
 
     // Overall recommendations
-    if (
-      !portfolioData.sfiaSummary?.skillSummaries?.length &&
-      !portfolioData.tpqiSummary?.careerSummaries?.length
-    ) {
-      recommendations.push(
-        "เริ่มสร้างพอร์ตโฟลิโอวิชาชีพของคุณโดยการทำแบบประเมินทักษะและการประเมินอาชีพ"
-      );
+    if (!portfolioData.sfiaSummary?.skillSummaries?.length && !portfolioData.tpqiSummary?.careerSummaries?.length) {
+      recommendations.push("เริ่มสร้างพอร์ตโฟลิโอวิชาชีพของคุณโดยการทำแบบประเมินทักษะและการประเมินอาชีพ");
     }
 
     return recommendations;

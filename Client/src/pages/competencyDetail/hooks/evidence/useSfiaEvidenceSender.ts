@@ -1,366 +1,216 @@
 import { useState, useMemo, useCallback } from "react";
-import { useAuth } from "@Contexts/AuthContext";
 import { SfiaEvidenceService } from "../../services/postSfiaEvidenceAPI";
 import { DeleteSfiaEvidenceService } from "../../services/deleteSfiaEvidenceAPI";
 import { SubmitEvidenceRequest, EvidenceState } from "../../types/sfia";
+import { AxiosError } from "axios";
 
 /**
- * # SFIA Evidence Management Hook
- *
- * A React hook that manages evidence submission for SFIA (Skills Framework for the Information Age)
- * competency assessments. This hook provides a complete solution for handling multiple evidence
- * submissions with individual state tracking per sub-skill.
- *
- * ## State Management
- * Each sub-skill ID has its own independent state:
- * ```
- * evidenceState: {
- *   urls: { "123": "https://example.com", "124": "Description text" }
- *   submitted: { "123": true, "124": false }
- *   loading: { "123": false, "124": true }
- *   errors: { "123": "", "124": "Please enter evidence" }
- * }
- * ```
- *
- * ## Quick Usage
- * ```jsx
- * function EvidenceForm({ subSkillId }) {
- *   const { evidenceState, handleUrlChange, handleSubmit } = useSfiaEvidenceSender();
- *
- *   return (
- *     <div>
- *       <input
- *         value={evidenceState.urls[subSkillId] || ''}
- *         onChange={(e) => handleUrlChange(subSkillId, e.target.value)}
- *         placeholder="Enter evidence URL or description"
- *       />
- *       <button onClick={() => handleSubmit(subSkillId)}>
- *         {evidenceState.loading[subSkillId] ? 'Submitting...' : 'Submit'}
- *       </button>
- *       {evidenceState.errors[subSkillId] && (
- *         <p className="error">{evidenceState.errors[subSkillId]}</p>
- *       )}
- *     </div>
- *   );
- * }
- * ```
- *
- * @returns {Object} Hook interface
- * @returns {EvidenceState} evidenceState - Complete state object for all sub-skills
- * @returns {Function} handleUrlChange - Updates evidence input: `(id: number, value: string) => void`
- * @returns {Function} handleRemove - Clears evidence data: `(id: number) => void`
- * @returns {Function} handleSubmit - Submits evidence: `(id: number) => Promise<void>`
+ * useSfiaEvidenceSender
+ * - Keeps evidenceState shape consistent with EvidenceState type:
+ *   urls: { [id]: { evidenceUrl: string; approvalStatus: string | null } }
  */
 export const useSfiaEvidenceSender = () => {
-  // Initialize state for tracking all evidence submissions
   const [evidenceState, setEvidenceState] = useState<EvidenceState>({
-    urls: {}, // Evidence input values (URL or text)
-    submitted: {}, // Submission completion status
-    loading: {}, // API call loading states
-    deleting: {}, // Evidence deletion loading states
-    errors: {}, // Validation and submission errors
-    approvalStatus: {}, // Approval status for each sub-skill
+    urls: {}, // { [subSkillId]: { evidenceUrl, approvalStatus } }
+    submitted: {}, // { [subSkillId]: boolean }
+    loading: {}, // { [subSkillId]: boolean }
+    deleting: {}, // { [subSkillId]: boolean }
+    errors: {}, // { [subSkillId]: string }
+    approvalStatus: {}, // { [subSkillId]: string | null }
   });
 
-  const initializeEvidenceUrls = useCallback(
-    (evidenceData: {
-      [subSkillId: number]: { url: string; approvalStatus: string | null };
-    }) => {
-      setEvidenceState((prev) => ({
-        ...prev,
-        urls: {
-          ...prev.urls,
-          ...Object.fromEntries(
-            Object.entries(evidenceData).map(([key, value]) => [
-              key.toString(),
-              {
-                evidenceUrl: value.url, // Using evidenceUrl to match type definition
-                approvalStatus: value.approvalStatus,
-              },
-            ])
-          ),
-        },
-        submitted: {
-          ...prev.submitted,
-          ...Object.fromEntries(
-            Object.entries(evidenceData).map(([key, value]) => [
-              key.toString(),
-              !!value.url, // Check if URL exists
-            ])
-          ),
-        },
-      }));
-    },
-    []
-  );
-
-  // Get authentication token from context
-  const { accessToken } = useAuth();
-
-  // API base URL from environment or fallback
-  const baseApi = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  // memoized services
+  const evidenceService = useMemo(() => new SfiaEvidenceService(), []);
+  const deleteService = useMemo(() => new DeleteSfiaEvidenceService(), []);
 
   /**
-   * Service instance for API calls - memoized to prevent unnecessary re-creation
-   * Recreates only when baseApi or accessToken changes
+   * Initialize urls from external data
+   * input shape: { [subSkillId]: { url: string, approvalStatus: string | null } }
    */
-  const evidenceService = useMemo(
-    () => new SfiaEvidenceService(baseApi, accessToken),
-    [baseApi, accessToken]
-  );
 
-  /**
-   * Updates the evidence input for a specific sub-skill
-   *
-   * @param {number} id - The sub-skill ID to update
-   * @param {string} value - The evidence URL or description text
-   *
-   * Side effects:
-   * - Updates the input value in state
-   * - Clears any existing error for this sub-skill
-   */
-  const handleUrlChange = (id: number, value: string) => {
-    setEvidenceState((prev) => ({
-      ...prev,
-      urls: { ...prev.urls, [id.toString()]: value },
-      errors: { ...prev.errors, [id.toString()]: "" }, // Clear errors on input change
-    }));
-  };
+  const initializeEvidenceUrls = useCallback((data: { [subSkillId: number]: { url: string; approvalStatus: string | null } }) => {
+    setEvidenceState((prev) => {
+      const nextUrls = { ...prev.urls };
+      const nextSubmitted = { ...prev.submitted };
+      const nextApproval = { ...prev.approvalStatus };
 
-  /**
-   * Completely resets the evidence entry for a sub-skill
-   *
-   * @param {number} id - The sub-skill ID to reset
-   *
-   * Side effects:
-   * - Clears the evidence input
-   * - Resets submission status to false
-   * - Clears any errors
-   */
-  const handleRemove = (id: number) => {
-    const idStr = id.toString();
-    setEvidenceState((prev) => ({
-      ...prev,
-      urls: { ...prev.urls, [idStr]: "" },
-      submitted: { ...prev.submitted, [idStr]: false },
-      errors: { ...prev.errors, [idStr]: "" },
-    }));
-  };
+      Object.entries(data).forEach(([k, v]) => {
+        const id = k.toString();
+        nextUrls[id] = { evidenceUrl: v.url ?? "", approvalStatus: v.approvalStatus ?? null };
+        nextSubmitted[id] = !!v.url;
+        nextApproval[id] = v.approvalStatus ?? null;
+      });
 
-  /**
-   * Validates and submits evidence for a specific sub-skill
-   *
-   * @param {number} id - The sub-skill ID to submit evidence for
-   *
-   * Process:
-   * 1. Validates evidence input (must not be empty)
-   * 2. Checks user authentication
-   * 3. Sets loading state
-   * 4. Determines if input is URL or text description
-   * 5. Calls API to submit evidence
-   * 6. Updates state based on success/failure
-   * 7. Always clears loading state
-   */
-  const handleSubmit = async (id: number) => {
-    const idStr = id.toString();
-
-    // Clear old status for this sub-skill before starting submission
-    setEvidenceState((prev) => ({
-      ...prev,
-      errors: { ...prev.errors, [idStr]: "" },
-      submitted: { ...prev.submitted, [idStr]: false },
-      loading: { ...prev.loading, [idStr]: false },
-    }));
-
-    const evidenceUrl = evidenceState.urls[idStr];
-
-    // Step 1: Validate evidence input
-    if (
-      !evidenceUrl ||
-      typeof evidenceUrl !== "string" ||
-      evidenceUrl.trim() === ""
-    ) {
-      setEvidenceState((prev) => ({
+      return {
         ...prev,
-        errors: { ...prev.errors, [idStr]: "Evidence URL cannot be empty." },
-      }));
-      return;
-    }
-
-    const isValidUrl = evidenceService.isValidUrl(evidenceUrl);
-    if (!isValidUrl) {
-      setEvidenceState((prev) => ({
-        ...prev,
-        errors: { ...prev.errors, [idStr]: "Please provide a valid URL." },
-      }));
-      return;
-    }
-
-    // Step 2: Check authentication
-    if (!accessToken) {
-      setEvidenceState((prev) => ({
-        ...prev,
-        errors: {
-          ...prev.errors,
-          [idStr]: "Please log in to submit evidence.",
-        },
-      }));
-      return;
-    }
-
-    // Step 3: Set loading state and clear errors
-    setEvidenceState((prev) => ({
-      ...prev,
-      loading: { ...prev.loading, [idStr]: true },
-      errors: { ...prev.errors, [idStr]: "" },
-    }));
-
-    try {
-      // Step 4: Prepare API request
-      const evidenceRequest: SubmitEvidenceRequest = {
-        subSkillId: id,
-        evidenceText: evidenceUrl, // Always include as text
-        evidenceUrl, // Include URL since it's valid
+        urls: nextUrls,
+        submitted: nextSubmitted,
+        approvalStatus: nextApproval,
       };
+    });
+  }, []);
 
-      // Step 5: Submit to API
-      const response = await evidenceService.submitEvidence(evidenceRequest);
+  const handleUrlChange = useCallback((id: number, value: string) => {
+    const idStr = id.toString();
+    setEvidenceState((prev) => ({
+      ...prev,
+      urls: {
+        ...prev.urls,
+        [idStr]: {
+          evidenceUrl: value,
+          approvalStatus: prev.urls[idStr]?.approvalStatus ?? null,
+        },
+      },
+      errors: { ...prev.errors, [idStr]: "" }, // clear error on change
+    }));
+  }, []);
 
-      if (response.success) {
-        // Success: Mark as submitted
+  const handleRemove = useCallback((id: number) => {
+    const idStr = id.toString();
+    setEvidenceState((prev) => ({
+      ...prev,
+      urls: { ...prev.urls, [idStr]: { evidenceUrl: "", approvalStatus: null } },
+      submitted: { ...prev.submitted, [idStr]: false },
+      errors: { ...prev.errors, [idStr]: "" },
+      approvalStatus: { ...prev.approvalStatus, [idStr]: null },
+    }));
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (id: number): Promise<void> => {
+      const idStr = id.toString();
+
+      // read current value from state (functional read to avoid stale)
+      let currentValue = "";
+      setEvidenceState((prev) => {
+        currentValue = prev.urls[idStr]?.evidenceUrl?.trim() ?? "";
+        return prev;
+      });
+
+      if (!currentValue) {
         setEvidenceState((prev) => ({
           ...prev,
-          submitted: { ...prev.submitted, [idStr]: true },
-          approvalStatus: { ...prev.approvalStatus, [idStr]: "NOT_APPROVED" },
+          errors: { ...prev.errors, [idStr]: "Evidence URL or description cannot be empty." },
         }));
-      } else {
-        // API returned error
+        return;
+      }
+
+      // start loading
+      setEvidenceState((prev) => ({
+        ...prev,
+        loading: { ...prev.loading, [idStr]: true },
+        errors: { ...prev.errors, [idStr]: "" },
+      }));
+
+      try {
+        const isUrl = evidenceService.isValidUrl(currentValue);
+        const request: SubmitEvidenceRequest = {
+          subSkillId: id,
+          evidenceText: currentValue,
+          ...(isUrl ? { evidenceUrl: currentValue } : {}),
+        } as SubmitEvidenceRequest;
+
+        const response = await evidenceService.submitEvidence(request);
+
+        if (response.success) {
+          setEvidenceState((prev) => ({
+            ...prev,
+            submitted: { ...prev.submitted, [idStr]: true },
+            approvalStatus: { ...prev.approvalStatus, [idStr]: "NOT_APPROVED" },
+            urls: {
+              ...prev.urls,
+              [idStr]: { evidenceUrl: currentValue, approvalStatus: "NOT_APPROVED" },
+            },
+            errors: { ...prev.errors, [idStr]: "" },
+          }));
+        } else {
+          setEvidenceState((prev) => ({
+            ...prev,
+            errors: { ...prev.errors, [idStr]: response.message || "Failed to submit evidence." },
+          }));
+        }
+      } catch (err: unknown) {
+        let msg = "Failed to submit evidence. Please try again.";
+        if (err instanceof Error) msg = err.message;
+        else if ((err as AxiosError).isAxiosError) {
+          const a = err as AxiosError;
+          msg = (a.response?.data as any)?.message ?? a.message ?? msg;
+        }
+
         setEvidenceState((prev) => ({
           ...prev,
-          errors: {
-            ...prev.errors,
-            [idStr]: response.message || "Failed to submit evidence.",
-          },
+          errors: { ...prev.errors, [idStr]: msg },
+        }));
+        console.error(`[SfiaEvidence] submit error subSkill=${id} :`, err);
+      } finally {
+        setEvidenceState((prev) => ({
+          ...prev,
+          loading: { ...prev.loading, [idStr]: false },
         }));
       }
-    } catch (error: unknown) {
-      // Network or other errors
-      console.error("Error submitting evidence:", error);
-      setEvidenceState((prev) => ({
-        ...prev,
-        errors: {
-          ...prev.errors,
-          [idStr]:
-            error.message || "Failed to submit evidence. Please try again.",
-        },
-      }));
-    } finally {
-      // Step 6: Always clear loading state
-      setEvidenceState((prev) => ({
-        ...prev,
-        loading: { ...prev.loading, [idStr]: false },
-      }));
-    }
-  };
+    },
+    [evidenceService]
+  );
 
-  /**
-   * Handles evidence deletion for a specific sub-skill
-   *
-   * @param {number} id - The sub-skill ID to delete evidence for
-   * @returns {Promise<boolean>} Promise that resolves to true if deletion was successful
-   *
-   * Process:
-   * 1. Validates user authentication
-   * 2. Sets deleting state to show UI feedback
-   * 3. Calls delete API
-   * 4. Updates state based on success/failure
-   * 5. Clears deleting state
-   */
   const handleDelete = useCallback(
     async (id: number): Promise<boolean> => {
       const idStr = id.toString();
 
-      // Step 1: Validate authentication
-      if (!accessToken) {
-        console.error("❌ User is not authenticated");
-        setEvidenceState((prev) => ({
-          ...prev,
-          errors: { ...prev.errors, [idStr]: "Authentication required" },
-        }));
-        return false;
-      }
-
-      // Step 2: Set deleting state
       setEvidenceState((prev) => ({
         ...prev,
         deleting: { ...prev.deleting, [idStr]: true },
-        errors: { ...prev.errors, [idStr]: "" }, // Clear any previous errors
+        errors: { ...prev.errors, [idStr]: "" },
       }));
 
       try {
-        // Step 3: Create delete service and call API
-        const deleteService = new DeleteSfiaEvidenceService(
-          baseApi,
-          accessToken
-        );
-        const result = await deleteService.deleteEvidence({
-          subSkillId: id,
-        });
-
+        const result = await deleteService.deleteEvidence({ subSkillId: id });
         if (result.success) {
-          // Step 4a: Successful deletion - reset evidence state
-          console.log(
-            `✅ SFIA evidence deleted successfully for subskill ID: ${id}`
-          );
           setEvidenceState((prev) => ({
             ...prev,
-            urls: {
-              ...prev.urls,
-              [idStr]: { evidenceUrl: "", approvalStatus: null },
-            },
+            urls: { ...prev.urls, [idStr]: { evidenceUrl: "", approvalStatus: null } },
             submitted: { ...prev.submitted, [idStr]: false },
-            errors: { ...prev.errors, [idStr]: "" },
             approvalStatus: { ...prev.approvalStatus, [idStr]: null },
+            errors: { ...prev.errors, [idStr]: "" },
           }));
           return true;
         } else {
-          // Step 4b: API returned error
-          const errorMessage = result.message || "Failed to delete evidence";
-          console.error(`❌ SFIA evidence deletion failed:`, errorMessage);
+          const msg = result.message || "Failed to delete evidence.";
           setEvidenceState((prev) => ({
             ...prev,
-            errors: { ...prev.errors, [idStr]: errorMessage },
+            errors: { ...prev.errors, [idStr]: msg },
           }));
           return false;
         }
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred";
-        console.error(`❌ Error deleting SFIA evidence:`, error);
+      } catch (err: unknown) {
+        let msg = "Failed to delete evidence. Please try again.";
+        if (err instanceof Error) msg = err.message;
+        else if ((err as AxiosError).isAxiosError) {
+          const a = err as AxiosError;
+          msg = (a.response?.data as any)?.message ?? a.message ?? msg;
+        }
+
         setEvidenceState((prev) => ({
           ...prev,
-          errors: { ...prev.errors, [idStr]: errorMessage },
+          errors: { ...prev.errors, [idStr]: msg },
         }));
+        console.error(`[SfiaEvidence] delete error subSkill=${id} :`, err);
         return false;
       } finally {
-        // Step 5: Always clear deleting state
         setEvidenceState((prev) => ({
           ...prev,
           deleting: { ...prev.deleting, [idStr]: false },
         }));
       }
     },
-    [accessToken, baseApi]
+    [deleteService]
   );
 
   return {
     evidenceState,
+    initializeEvidenceUrls,
     handleUrlChange,
     handleRemove,
     handleSubmit,
     handleDelete,
-    initializeEvidenceUrls,
   };
 };

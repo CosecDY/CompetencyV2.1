@@ -22,12 +22,7 @@ export function useTpqiUnitDetail(options: UseCompetencyDetailOptions = {}) {
   const { getFromCache, setCache, clearCache: clearCacheUtility, isInCache, getCacheKey } = useCompetencyCache(opts.cacheDuration);
 
   // Retry logic
-  const { executeWithRetry, getRetryAttempts: getRetryAttemptsUtility, clearRetryTracking } = useRetryLogic(
-    opts.maxRetries,
-    opts.retryDelay,
-    opts.autoRetryOnNetworkError,
-    getCacheKey
-  );
+  const { executeWithRetry, getRetryAttempts: getRetryAttemptsUtility, clearRetryTracking } = useRetryLogic(opts.maxRetries, opts.retryDelay, opts.autoRetryOnNetworkError, getCacheKey);
 
   /**
    * Fetch TPQI unit detail with retry logic
@@ -49,11 +44,7 @@ export function useTpqiUnitDetail(options: UseCompetencyDetailOptions = {}) {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const data = await executeWithRetry(
-          () => fetchTpqiUnitDetailByCode(unitCode),
-          "tpqi",
-          unitCode
-        );
+        const data = await executeWithRetry(() => fetchTpqiUnitDetailByCode(unitCode), "tpqi", unitCode);
 
         // Store in cache
         setCache("tpqi", unitCode, data);

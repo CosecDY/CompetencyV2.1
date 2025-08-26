@@ -28,12 +28,8 @@ const AuthStates: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <i className="fas fa-exclamation-circle text-yellow-500 text-xl"></i>
                 <div>
-                  <h3 className="text-yellow-800 font-medium">
-                    กรุณาเข้าสู่ระบบ
-                  </h3>
-                  <p className="text-yellow-600 text-sm">
-                    คุณจำเป็นต้องเข้าสู่ระบบเพื่อเข้าถึงหน้าพอร์ตโฟลิโอของคุณ
-                  </p>
+                  <h3 className="text-yellow-800 font-medium">กรุณาเข้าสู่ระบบ</h3>
+                  <p className="text-yellow-600 text-sm">คุณจำเป็นต้องเข้าสู่ระบบเพื่อเข้าถึงหน้าพอร์ตโฟลิโอของคุณ</p>
                 </div>
               </div>
             </div>
@@ -46,34 +42,20 @@ const AuthStates: React.FC = () => {
 
 const PortfolioPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
-  const { user, accessToken } = useAuth();
+  const { user } = useAuth();
 
   // Use the portfolio hook with real API integration
-  const {
-    portfolioData,
-    loading,
-    error,
-    hasData,
-    fetchPortfolioData,
-    refreshPortfolio,
-    recommendations,
-    clearError,
-    lastFetched,
-    isDataStale,
-  } = usePortfolio(
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:3000",
-    accessToken
-  );
+  const { portfolioData, loading, error, hasData, fetchPortfolioData, refreshPortfolio, recommendations, clearError, lastFetched, isDataStale } = usePortfolio();
 
   // Fetch portfolio data when user is available
   useEffect(() => {
-    if (user?.email && accessToken) {
+    if (user?.email) {
       fetchPortfolioData(user.email);
     }
-  }, [user?.email, accessToken, fetchPortfolioData]);
+  }, [user?.email, fetchPortfolioData]);
 
   // AuthStates for PortfolioPage
-  if (!user || !accessToken) {
+  if (!user) {
     return <AuthStates />;
   }
 
@@ -91,23 +73,12 @@ const PortfolioPage: React.FC = () => {
 
   // Error state
   if (error) {
-    return (
-      <ErrorState
-        error={error}
-        onRetry={handleRefresh}
-        onDismiss={clearError}
-      />
-    );
+    return <ErrorState error={error} onRetry={handleRefresh} onDismiss={clearError} />;
   }
 
   // No data state
   if (!hasData) {
-    return (
-      <NoDataState
-        recommendations={recommendations}
-        onRefresh={handleRefresh}
-      />
-    );
+    return <NoDataState recommendations={recommendations} onRefresh={handleRefresh} />;
   }
 
   // Main portfolio view
@@ -116,13 +87,7 @@ const PortfolioPage: React.FC = () => {
       <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 mt-6 sm:mt-4">
         {/* Header Section */}
         <div className="w-full">
-          <PortfolioHeader
-            userEmail={portfolioData?.userEmail || user?.email || ""}
-            isDataStale={isDataStale}
-            loading={loading}
-            onRefresh={handleRefresh}
-            lastUpdated={lastFetched}
-          />
+          <PortfolioHeader userEmail={portfolioData?.userEmail || user?.email || ""} isDataStale={isDataStale} loading={loading} onRefresh={handleRefresh} lastUpdated={lastFetched} />
         </div>
 
         {/* Recommendations Section */}
@@ -132,23 +97,11 @@ const PortfolioPage: React.FC = () => {
 
         {/* Navigation Section */}
         <div className="w-full overflow-x-auto">
-          <NavigationTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            sfiaSkillsCount={portfolioData?.sfiaSkills.length || 0}
-            tpqiCareersCount={portfolioData?.tpqiCareers.length || 0}
-          />
+          <NavigationTabs activeTab={activeTab} onTabChange={setActiveTab} sfiaSkillsCount={portfolioData?.sfiaSkills.length || 0} tpqiCareersCount={portfolioData?.tpqiCareers.length || 0} />
         </div>
 
         {/* Content Section */}
-        <div className="w-full min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
-          {portfolioData && (
-            <PortfolioContent
-              activeTab={activeTab}
-              portfolioData={portfolioData}
-            />
-          )}
-        </div>
+        <div className="w-full min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">{portfolioData && <PortfolioContent activeTab={activeTab} portfolioData={portfolioData} />}</div>
 
         {/* Footer Section */}
         <div className="w-full">

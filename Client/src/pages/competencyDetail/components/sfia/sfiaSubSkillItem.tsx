@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { EvidenceItem } from "../shared/EvidenceItem";
 import { SfiaSubSkill } from "../../types/sfia";
-import { useAuth } from "@Contexts/AuthContext";
 import { GetSfiaEvidenceService } from "../../services/getSfiaEvidenceAPI";
 
 interface SubSkillItemProps {
@@ -34,32 +33,23 @@ interface SubSkillItemProps {
 }
 
 // Custom hook for evidence fetching
-const useEvidenceFetcher = (
-  skillCode: string,
-  subskillId: number,
-  onUrlChange: (value: string) => void,
-  onEvidenceLoaded?: (evidence: string) => void
-) => {
-  const { accessToken } = useAuth();
+const useEvidenceFetcher = (skillCode: string, subskillId: number, onUrlChange: (value: string) => void, onEvidenceLoaded?: (evidence: string) => void) => {
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceLoaded, setEvidenceLoaded] = useState(false);
 
   const fetchExistingEvidence = useCallback(async () => {
-    if (!accessToken || !skillCode || evidenceLoaded) return;
+    if (!skillCode || evidenceLoaded) return;
 
     setEvidenceLoading(true);
     try {
-      const baseApi = import.meta.env.VITE_API_BASE_URL;
-      const evidenceService = new GetSfiaEvidenceService(baseApi, accessToken);
+      const evidenceService = new GetSfiaEvidenceService();
 
       const response = await evidenceService.getEvidence({
         skillCode,
       });
 
       if (response.success && response.data) {
-        const subSkillEvidence = response.data.evidences?.find(
-          (evidence: unknown) => evidence.id === subskillId
-        );
+        const subSkillEvidence = response.data.evidences?.find((evidence: unknown) => evidence.id === subskillId);
 
         if (subSkillEvidence?.url) {
           onEvidenceLoaded?.(subSkillEvidence.url);
@@ -73,14 +63,7 @@ const useEvidenceFetcher = (
     } finally {
       setEvidenceLoading(false);
     }
-  }, [
-    accessToken,
-    skillCode,
-    subskillId,
-    evidenceLoaded,
-    onEvidenceLoaded,
-    onUrlChange,
-  ]);
+  }, [skillCode, subskillId, evidenceLoaded, onEvidenceLoaded, onUrlChange]);
 
   useEffect(() => {
     fetchExistingEvidence();
@@ -111,12 +94,7 @@ const SubSkillItem: React.FC<SubSkillItemProps> = ({
   onEvidenceLoaded,
 }) => {
   // Custom hook for evidence fetching
-  const { evidenceLoading } = useEvidenceFetcher(
-    skillCode,
-    subskill.id,
-    onUrlChange,
-    onEvidenceLoaded
-  );
+  const { evidenceLoading } = useEvidenceFetcher(skillCode, subskill.id, onUrlChange, onEvidenceLoaded);
 
   // Debug wrapper for onDelete
   const handleDeleteDebug = () => {

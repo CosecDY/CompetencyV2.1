@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { GetSfiaSummaryService, SfiaSummaryStats } from "../../services/sfia/getSfiaSummaryAPI";
-import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Example component showing how to use the SFIA Summary API service.
@@ -10,13 +9,9 @@ const SfiaSummaryExample: React.FC = () => {
   const [summaryData, setSummaryData] = useState<SfiaSummaryStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { accessToken } = useAuth();
 
   // Initialize the service
-  const sfiaService = new GetSfiaSummaryService(
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:3000",
-    accessToken
-  );
+  const sfiaService = new GetSfiaSummaryService();
 
   // Fetch SFIA summary data
   const fetchSfiaSummary = async () => {
@@ -32,15 +27,15 @@ const SfiaSummaryExample: React.FC = () => {
 
       // Get user summary
       const response = await sfiaService.getUserSummary();
-      
+
       if (sfiaService.hasSummaryData(response)) {
         setSummaryData(response.data!);
-        
+
         // Example: Calculate additional statistics
         const additionalStats = sfiaService.calculateAdditionalStats(response.data!);
         console.log("High performance skills:", additionalStats.highPerformanceSkills);
         console.log("Skills by category:", additionalStats.skillsByCategory);
-        
+
         // Example: Format data for display
         const formattedData = sfiaService.formatSummaryForDisplay(response.data!);
         console.log("Formatted for display:", formattedData);
@@ -56,11 +51,10 @@ const SfiaSummaryExample: React.FC = () => {
 
   // Auto-fetch on mount when token is available
   useEffect(() => {
-    if (accessToken) {
-      fetchSfiaSummary();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+    fetchSfiaSummary();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -76,10 +70,7 @@ const SfiaSummaryExample: React.FC = () => {
       <div className="p-4 bg-red-50 border border-red-200 rounded">
         <h3 className="text-red-800 font-medium">Error</h3>
         <p className="text-red-600">{error}</p>
-        <button
-          onClick={fetchSfiaSummary}
-          className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-        >
+        <button onClick={fetchSfiaSummary} className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
           Retry
         </button>
       </div>
@@ -90,10 +81,7 @@ const SfiaSummaryExample: React.FC = () => {
     return (
       <div className="p-4 bg-gray-50 border border-gray-200 rounded">
         <p>No SFIA summary data available</p>
-        <button
-          onClick={fetchSfiaSummary}
-          className="mt-2 bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700"
-        >
+        <button onClick={fetchSfiaSummary} className="mt-2 bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700">
           Load Data
         </button>
       </div>
@@ -103,7 +91,7 @@ const SfiaSummaryExample: React.FC = () => {
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">SFIA Skills Summary</h2>
-      
+
       {/* Summary Statistics */}
       <div className="bg-teal-50 border border-teal-200 rounded p-4">
         <h3 className="font-medium text-teal-800 mb-2">Overview</h3>
@@ -136,19 +124,14 @@ const SfiaSummaryExample: React.FC = () => {
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-lg font-medium text-teal-600">
-                  {skill.skillPercent}%
-                </span>
+                <span className="text-lg font-medium text-teal-600">{skill.skillPercent}%</span>
                 <p className="text-sm text-gray-500">{skill.level.name}</p>
               </div>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-teal-600 h-2 rounded-full"
-                style={{ width: `${skill.skillPercent}%` }}
-              ></div>
+              <div className="bg-teal-600 h-2 rounded-full" style={{ width: `${skill.skillPercent}%` }}></div>
             </div>
           </div>
         ))}
@@ -156,10 +139,7 @@ const SfiaSummaryExample: React.FC = () => {
 
       {/* Actions */}
       <div className="flex space-x-2">
-        <button
-          onClick={fetchSfiaSummary}
-          className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700"
-        >
+        <button onClick={fetchSfiaSummary} className="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">
           Refresh
         </button>
         <button

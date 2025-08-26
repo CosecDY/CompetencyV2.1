@@ -1,18 +1,9 @@
 import type { CompetencyResponse } from "../types/CompetencyTypes";
-
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-const COMPETENCY_API = `${VITE_API_BASE_URL}/api/competency/search`;
+import api from "@Services/api";
 
 // Enhanced error class for better error handling
 export class APIError extends Error {
-  constructor(
-    message: string,
-    public status?: number,
-    public response?: Response,
-    public source?: string,
-    public errorType?: string,
-    public details?: unknown
-  ) {
+  constructor(message: string, public status?: number, public response?: Response, public source?: string, public errorType?: string, public details?: unknown) {
     super(message);
     this.name = "APIError";
   }
@@ -32,52 +23,30 @@ async function parseErrorResponse(res: Response): Promise<{
 }> {
   let errorData: Record<string, unknown> | null = null;
   try {
-    const contentType = res.headers.get('content-type');
-    if (contentType?.includes('application/json')) {
+    const contentType = res.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
       errorData = await res.json();
     }
   } catch (parseError) {
-    console.warn('Failed to parse error response as JSON:', parseError);
+    console.warn("Failed to parse error response as JSON:", parseError);
   }
 
   return {
     errorMessage: (errorData?.message as string) || `HTTP ${res.status}: ${res.statusText}`,
-    errorType: (errorData?.errorType as string) || 'unknown',
-    details: errorData?.details || null
+    errorType: (errorData?.errorType as string) || "unknown",
+    details: errorData?.details || null,
   };
 }
 
 // Enhanced fetch function with better error handling
-async function fetchFromSource(
-  dbType: "sfia" | "tpqi",
-  searchTerm: string
-): Promise<CompetencyResponse> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
+export async function fetchFromSource(dbType: "sfia" | "tpqi", searchTerm: string): Promise<CompetencyResponse> {
   try {
-    const res = await fetch(`${COMPETENCY_API}/${dbType}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-      body: JSON.stringify({ searchTerm }),
-      signal: controller.signal,
-    });
+    const res = await api.post(`/competency/search/${dbType}`, { searchTerm });
 
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const { errorMessage, errorType, details } = await parseErrorResponse(res);
-      throw new APIError(errorMessage, res.status, res, dbType, errorType, details);
-    }
-
-    const data = await res.json();
+    const data = res.data;
 
     // Server returns { results: array } for POST requests
-    const Competencies: Array<{ name: string; id: string }> = Array.isArray(
-      data.results
-    )
+    const Competencies: Array<{ name: string; id: string }> = Array.isArray(data.results)
       ? data.results.map((item: CompetencyItem) => ({
           name: item.name,
           id: item.id,
@@ -85,41 +54,25 @@ async function fetchFromSource(
       : [];
 
     return { source: dbType, Competencies };
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    // Handle different error types
-    if (error instanceof APIError) {
-      throw error;
+  } catch (error: any) {
+    if (error.response) {
+      const { errorMessage, errorType, details } = await parseErrorResponse(error.response);
+      throw new APIError(errorMessage, error.response.status, error.response, dbType, errorType, details);
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
+    if (error.code === "ECONNABORTED") {
       throw new APIError(`Request timeout for ${dbType}`, 0, undefined, dbType, "timeout");
     }
 
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new APIError(
-        `Network error when fetching from ${dbType}`,
-        0,
-        undefined,
-        dbType,
-        "network"
-      );
+    if (error.message?.includes("Network Error")) {
+      throw new APIError(`Network error when fetching from ${dbType}`, 0, undefined, dbType, "network");
     }
 
-    throw new APIError(
-      `Failed to fetch from ${dbType}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      0,
-      undefined,
-      dbType,
-      "unknown"
-    );
+    throw new APIError(`Failed to fetch from ${dbType}: ${error.message || "Unknown error"}`, 0, undefined, dbType, "unknown");
   }
 }
 
-export async function fetchCompetenciesBySearchTerm(
-  searchTerm: string
-): Promise<CompetencyResponse[]> {
+export async function fetchCompetenciesBySearchTerm(searchTerm: string): Promise<CompetencyResponse[]> {
   if (!searchTerm.trim()) {
     throw new APIError("Search term cannot be empty");
   }
@@ -138,10 +91,7 @@ export async function fetchCompetenciesBySearchTerm(
       return {
         success: false,
         data: { source: dbType, Competencies: [] },
-        error:
-          error instanceof APIError
-            ? error
-            : new APIError(`Unknown error from ${dbType}`),
+        error: error instanceof APIError ? error : new APIError(`Unknown error from ${dbType}`),
       };
     }
   });
@@ -182,49 +132,25 @@ export async function fetchCompetenciesBySearchTerm(
 }
 
 // Alternative version that throws on any error (stricter)
-export async function fetchCompetenciesBySearchTermStrict(
-  searchTerm: string
-): Promise<CompetencyResponse[]> {
+export async function fetchCompetenciesBySearchTermStrict(searchTerm: string): Promise<CompetencyResponse[]> {
   if (!searchTerm.trim()) {
     throw new APIError("Search term cannot be empty");
   }
 
   const dbTypes: ("sfia" | "tpqi")[] = ["sfia", "tpqi"];
-  const promises = dbTypes.map((dbType) =>
-    fetchFromSource(dbType, searchTerm)
-  );
+  const promises = dbTypes.map((dbType) => fetchFromSource(dbType, searchTerm));
   return await Promise.all(promises);
 }
 
 // Function to get all competencies from a specific database
-export async function getAllCompetencies(
-  dbType: "sfia" | "tpqi"
-): Promise<CompetencyResponse> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
+export async function getAllCompetencies(dbType: "sfia" | "tpqi"): Promise<CompetencyResponse> {
   try {
-    const res = await fetch(`${COMPETENCY_API}/${dbType}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-      signal: controller.signal,
-    });
+    const res = await api.get(`/competency/search/${dbType}`);
 
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const { errorMessage, errorType, details } = await parseErrorResponse(res);
-      throw new APIError(errorMessage, res.status, res, dbType, errorType, details);
-    }
-
-    const data = await res.json();
+    const data = res.data;
 
     // Server returns { Competencies: array } for GET requests
-    const Competencies: Array<{ name: string; id: string }> = Array.isArray(
-      data.Competencies
-    )
+    const Competencies: Array<{ name: string; id: string }> = Array.isArray(data.Competencies)
       ? data.Competencies.map((item: CompetencyItem) => ({
           name: item.name,
           id: item.id,
@@ -232,35 +158,21 @@ export async function getAllCompetencies(
       : [];
 
     return { source: dbType, Competencies };
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    // Handle different error types
-    if (error instanceof APIError) {
-      throw error;
+  } catch (error: any) {
+    if (error.response) {
+      const { errorMessage, errorType, details } = await parseErrorResponse(error.response);
+      throw new APIError(errorMessage, error.response.status, error.response, dbType, errorType, details);
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
+    if (error.code === "ECONNABORTED") {
       throw new APIError(`Request timeout for ${dbType}`, 0, undefined, dbType, "timeout");
     }
 
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new APIError(
-        `Network error when fetching from ${dbType}`,
-        0,
-        undefined,
-        dbType,
-        "network"
-      );
+    if (error.message?.includes("Network Error")) {
+      throw new APIError(`Network error when fetching from ${dbType}`, 0, undefined, dbType, "network");
     }
 
-    throw new APIError(
-      `Failed to fetch from ${dbType}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      0,
-      undefined,
-      dbType,
-      "unknown"
-    );
+    throw new APIError(`Failed to fetch from ${dbType}: ${error.message || "Unknown error"}`, 0, undefined, dbType, "unknown");
   }
 }
 
@@ -279,10 +191,7 @@ export async function getAllCompetenciesFromAllSources(): Promise<CompetencyResp
       return {
         success: false,
         data: { source: dbType, Competencies: [] },
-        error:
-          error instanceof APIError
-            ? error
-            : new APIError(`Unknown error from ${dbType}`),
+        error: error instanceof APIError ? error : new APIError(`Unknown error from ${dbType}`),
       };
     }
   });
@@ -323,7 +232,7 @@ export function isNetworkError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
   }
-  
+
   const err = error as Record<string, unknown>;
   return (
     (error instanceof TypeError && error.message.includes("fetch")) ||
@@ -339,16 +248,11 @@ export function isTimeoutError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
   }
-  
+
   const err = error as Record<string, unknown>;
   const message = (err.message as string)?.toLowerCase() || "";
-  
-  return (
-    err.name === "AbortError" ||
-    err.name === "TimeoutError" ||
-    message.includes("timed out") ||
-    (message.includes("timeout") && !message.includes("not a timeout"))
-  );
+
+  return err.name === "AbortError" || err.name === "TimeoutError" || message.includes("timed out") || (message.includes("timeout") && !message.includes("not a timeout"));
 }
 
 // Test functions for error handling (remove in production)
@@ -369,48 +273,48 @@ export async function testTimeoutError(): Promise<CompetencyResponse[]> {
 }
 
 // Enhanced error simulation for different scenarios
-export async function testErrorByType(errorType: 'network' | 'validation' | 'server' | 'timeout' | 'structured'): Promise<CompetencyResponse[]> {
+export async function testErrorByType(errorType: "network" | "validation" | "server" | "timeout" | "structured"): Promise<CompetencyResponse[]> {
   switch (errorType) {
-    case 'network': {
+    case "network": {
       throw new TypeError("fetch is not defined");
     }
-    case 'validation': {
+    case "validation": {
       const validationError = new Error("Bad Request") as Error & { response?: { status: number; data: Record<string, unknown> } };
       validationError.response = {
         status: 400,
         data: {
-          errorType: 'validation',
-          message: 'Search term must be at least 2 characters long',
-          details: { minLength: 2, provided: 1 }
-        }
+          errorType: "validation",
+          message: "Search term must be at least 2 characters long",
+          details: { minLength: 2, provided: 1 },
+        },
       };
       throw validationError;
     }
-    case 'server': {
+    case "server": {
       const serverError = new Error("Internal Server Error") as Error & { response?: { status: number; data: Record<string, unknown> } };
       serverError.response = {
         status: 500,
         data: {
-          errorType: 'database_connection',
-          message: 'Database connection failed'
-        }
+          errorType: "database_connection",
+          message: "Database connection failed",
+        },
       };
       throw serverError;
     }
-    case 'timeout': {
+    case "timeout": {
       const timeoutError = new Error("Timeout") as Error & { name: string };
       timeoutError.name = "TimeoutError";
       throw timeoutError;
     }
-    case 'structured': {
+    case "structured": {
       const structuredError = new Error("Structured Error") as Error & { response?: { status: number; data: Record<string, unknown> } };
       structuredError.response = {
         status: 503,
         data: {
-          errorType: 'database_connection',
-          message: 'Database connection failed',
-          details: { code: 'ECONNREFUSED' }
-        }
+          errorType: "database_connection",
+          message: "Database connection failed",
+          details: { code: "ECONNREFUSED" },
+        },
       };
       throw structuredError;
     }
