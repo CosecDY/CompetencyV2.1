@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from "@react-oauth/google";
+
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { FcGoogle } from "react-icons/fc";
 
@@ -23,23 +24,23 @@ const Login: React.FC<LoginProps> = ({ open, onClose, handleLogin }) => {
     document.body.classList.remove("overflow-hidden");
   }, [open]);
 
+  const handleGoogleError = useCallback(() => {
+    console.error("Google login error");
+  }, []);
+
+  if (!open) return null;
+
   const handleGoogleSuccess = async (response: CredentialResponse) => {
     setLoading(true);
     try {
-      await handleLogin(response);
-      onClose();
+      await handleLogin(response); // รอ server ตอบ
+      onClose(); // ปิด modal หลัง login สำเร็จ
     } catch (error) {
       console.error("Login failed:", error);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleGoogleError = useCallback(() => {
-    console.error("Google login error");
-  }, []);
-
-  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
