@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client_competency";
 import { verifyToken } from "@Utils/tokenUtils";
 import { Role } from "./authEnums";
+
 const prisma = new PrismaClient();
 
 export interface AuthenticatedRequest extends Request {
@@ -13,128 +14,285 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-// ตรวจสอบ token และ attach user
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const token = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : req.cookies?.token;
-    if (!token) return res.status(401).json({ message: "Unauthorized: No token provided" });
+// Helper function to extract token from request
+const extractToken = (req: Request): string | null => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+  return req.cookies?.token || null;
+};
 
-    let payload;
-    try {
-      payload = verifyToken(token);
-    } catch (err) {
-      return res.status(401).json({ message: "Unauthorized: Invalid token" });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: String(payload.userId) },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: { permission: { include: { asset: true, operation: true } } },
+// Helper function to build user include query
+const getUserIncludeQuery = () => ({
+  userRoles: {
+    include: {
+      role: {
+        include: {
+          rolePermissions: {
+            include: {
+              permission: {
+                include: {
+                  asset: true,
+                  operation: true,
                 },
               },
             },
           },
         },
-        sessions: true,
       },
+    },
+  },
+  sessions: true,
+});
+
+// Helper function to update user session
+const updateUserSession = async (sessions: any[]) => {
+  if (!sessions?.length) return;
+
+  const now = new Date();
+  const activeSession = sessions
+    .filter((s) => !s.expiresAt || s.expiresAt > now)
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
+
+  if (activeSession) {
+    await prisma.session.update({
+      where: { id: activeSession.id },
+      data: { lastActivityAt: now },
     });
-
-    if (!user) return res.status(401).json({ message: "Unauthorized: User not found" });
-
-    if (user.sessions?.length) {
-      const now = new Date();
-      const latestSession = user.sessions.filter((s) => !s.expiresAt || s.expiresAt > now).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
-
-      if (latestSession) {
-        await prisma.session.update({
-          where: { id: latestSession.id },
-          data: { lastActivityAt: now },
-        });
-      }
-    }
-
-    const permissions = user.userRoles.flatMap((ur) => ur.role?.rolePermissions?.map((rp) => `${rp.permission.asset.tableName}:${rp.permission.operation.name}`) || []);
-    const roles = user.userRoles.map((ur) => ur.role?.name).filter(Boolean) as string[];
-
-    (req as AuthenticatedRequest).user = { userId: user.id, email: user.email, roles, permissions };
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
   }
 };
 
-// ตรวจสอบ role เฉพาะบาง role
-export const authorizeRole = (allowedRoles: string | string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    if (req.user.roles.includes(Role.Admin)) return next();
+// Helper function to extract permissions from user roles
+const extractPermissions = (userRoles: any[]): string[] => {
+  return userRoles.flatMap(
+    (ur) =>
+      ur.role?.rolePermissions?.map(
+        (rp) =>
+          `${rp.permission.asset.tableName}:${rp.permission.operation.name}`
+      ) || []
+  );
+};
 
-    const rolesToCheck = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
-    if (!req.user.roles.some((r) => rolesToCheck.includes(r))) {
-      return res.status(403).json({ message: "Forbidden: insufficient role" });
+// Helper function to extract roles from user roles
+const extractRoles = (userRoles: any[]): string[] => {
+  return userRoles.map((ur) => ur.role?.name).filter(Boolean) as string[];
+};
+
+// Main authentication middleware
+export const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const token = extractToken(req);
+    if (!token) {
+      res.status(401).json({
+        message: "Unauthorized: No token provided",
+      });
+      return;
+    }
+
+    // Verify token
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch (err) {
+      res.status(401).json({
+        message: "Unauthorized: Invalid token",
+      });
+      return;
+    }
+
+    // Fetch user with related data
+    const user = await prisma.user.findUnique({
+      where: { id: String(payload.userId) },
+      include: getUserIncludeQuery(),
+    });
+
+    if (!user) {
+      res.status(401).json({
+        message: "Unauthorized: User not found",
+      });
+      return;
+    }
+
+    // Update session activity
+    await updateUserSession(user.sessions);
+
+    // Extract permissions and roles
+    const permissions = extractPermissions(user.userRoles);
+    const roles = extractRoles(user.userRoles);
+
+    // Attach user to request
+    (req as AuthenticatedRequest).user = {
+      userId: user.id,
+      email: user.email,
+      roles,
+      permissions,
+    };
+
+    next();
+  } catch (err) {
+    console.error("Authentication error:", err);
+    res.status(401).json({
+      message: "Unauthorized: Invalid or expired token",
+    });
+  }
+};
+
+// Role authorization middleware
+export const authorizeRole = (allowedRoles: string | string[]) => {
+  return (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    // Admin bypass
+    if (req.user.roles.includes(Role.Admin)) {
+      next();
+      return;
+    }
+
+    const rolesToCheck = Array.isArray(allowedRoles)
+      ? allowedRoles
+      : [allowedRoles];
+
+    const hasRequiredRole = req.user.roles.some((role) =>
+      rolesToCheck.includes(role)
+    );
+
+    if (!hasRequiredRole) {
+      res.status(403).json({
+        message: "Forbidden: insufficient role",
+      });
+      return;
     }
 
     next();
   };
 };
 
-// **Middleware สำหรับบล็อก role "User"**
-export const blockUserRole = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-  if (req.user.roles.includes(Role.User)) {
-    return res.status(403).json({ message: "Forbidden: Users cannot access this resource" });
+// Block user role middleware
+export const blockUserRole = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
   }
+
+  if (req.user.roles.includes(Role.User)) {
+    res.status(403).json({
+      message: "Forbidden: Users cannot access this resource",
+    });
+    return;
+  }
+
   next();
 };
 
-// ตรวจสอบ permission
+// Permission authorization middleware
 export const authorizePermission = (requiredPermissions: string | string[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  return (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ): void => {
     const user = req.user;
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
 
-    const required = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-    const hasPermission = required.some((perm) => user.permissions.includes(perm));
+    const required = Array.isArray(requiredPermissions)
+      ? requiredPermissions
+      : [requiredPermissions];
+
+    const hasPermission = required.some((perm) =>
+      user.permissions.includes(perm)
+    );
 
     if (!hasPermission) {
-      return res.status(403).json({ message: "Forbidden: insufficient permissions" });
+      res.status(403).json({
+        message: "Forbidden: insufficient permissions",
+      });
+      return;
     }
+
     next();
   };
 };
 
-// ตรวจสอบ instance
+// Instance authorization middleware
 export const authorizeInstance = (resource: string, action: string) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const user = (req as AuthenticatedRequest).user;
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
-    if (user.roles.includes("Admin")) return next();
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    // Admin bypass
+    if (user.roles.includes("Admin")) {
+      next();
+      return;
+    }
 
     try {
       const userAssetInstance = await prisma.userAssetInstance.findFirst({
-        where: { userId: user.userId, assetInstance: { asset: { tableName: resource } } },
-        include: { assetInstance: { include: { asset: true } } },
+        where: {
+          userId: user.userId,
+          assetInstance: {
+            asset: { tableName: resource },
+          },
+        },
+        include: {
+          assetInstance: {
+            include: { asset: true },
+          },
+        },
       });
 
       if (!userAssetInstance) {
         const permissionKey = `${resource}:${action}`;
-        if (!user.permissions.includes(permissionKey)) return res.status(403).json({ message: "Forbidden: insufficient permissions (no instance + no role)" });
-
-        return next();
+        if (!user.permissions.includes(permissionKey)) {
+          res.status(403).json({
+            message:
+              "Forbidden: insufficient permissions (no instance + no role)",
+          });
+          return;
+        }
+        next();
+        return;
       }
 
       const instance = userAssetInstance.assetInstance;
       const permissionKey = `${instance.asset.tableName}:${action}`;
-      if (!user.permissions.includes(permissionKey)) return res.status(403).json({ message: "Forbidden: insufficient permission for this object" });
+
+      if (!user.permissions.includes(permissionKey)) {
+        res.status(403).json({
+          message: "Forbidden: insufficient permission for this object",
+        });
+        return;
+      }
 
       (req as any).assetInstance = instance;
       next();
     } catch (err) {
+      console.error("Instance authorization error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   };

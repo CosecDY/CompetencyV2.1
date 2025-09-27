@@ -145,7 +145,7 @@ export async function getSkillDetailsByCode(
       competency_id: skillData.code,
       competency_name: skillData.name,
       overall: skillData.overview,
-      note: skillData.note,
+      note: skillData.note?.replace(/\s+/g, " ").trim() || null,
       category: skillData.category
         ? {
             id: skillData.category.id,
@@ -157,10 +157,10 @@ export async function getSkillDetailsByCode(
         level_name: level.name,
         descriptions: level.descriptions.map((desc: any) => ({
           id: desc.id,
-          description_text: desc.text,
+          description_text: desc.text?.replace(/\s+/g, " ").trim() || null,
           subskills: desc.subSkills.map((subskill: any) => ({
             id: subskill.id,
-            subskill_text: subskill.text,
+            subskill_text: subskill.text?.replace(/\s+/g, " ").trim() || null,
           })),
         })),
       })),
