@@ -144,14 +144,14 @@ dist
 # *.spec.tsx
 
 # Ignore test folders
-__tests__/
-tests/
+# __tests__/
+# tests/
 # Ignore all files ending with .test.* or .spec.*
-*.test.*
+# *.test.*
 *.spec.*
 
 # Ignore tests inside __tests__ folders
-__tests__/
+# __tests__/
 .unlighthouse/
 
 .unlighthouse
