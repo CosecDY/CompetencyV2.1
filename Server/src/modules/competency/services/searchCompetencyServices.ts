@@ -94,10 +94,10 @@ export async function searchCompetency(
       take: 100,
       distinct: [config.field], // Remove duplicates based on name field
     });
-    
+
     // Additional client-side deduplication for extra safety
     const uniqueResults = new Map<string, { name: string; id: string }>();
-    
+
     results
       .filter(
         (item: any) =>
@@ -115,7 +115,7 @@ export async function searchCompetency(
           });
         }
       });
-    
+
     return Array.from(uniqueResults.values());
   });
 }
