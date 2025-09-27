@@ -138,10 +138,10 @@ dist
 .pnp.*
 
 # Ignore all test files (TypeScript)
-*.test.ts
-*.test.tsx
-*.spec.ts
-*.spec.tsx
+# *.test.ts
+# *.test.tsx
+# *.spec.ts
+# *.spec.tsx
 
 # Ignore test folders
 __tests__/
