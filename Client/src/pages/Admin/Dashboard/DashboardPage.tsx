@@ -57,51 +57,6 @@ export const DashboardPage: React.FC = () => {
               ))}
         </div>
 
-        {/* Recent Users Table */}
-        <div className="bg-white rounded-xl shadow-md p-6 overflow-x-auto">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Users</h2>
-          <table className="w-full text-left table-auto border-collapse">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="p-3 text-gray-500 text-sm uppercase tracking-wide">Name</th>
-                <th className="p-3 text-gray-500 text-sm uppercase tracking-wide">Email</th>
-                <th className="p-3 text-gray-500 text-sm uppercase tracking-wide">Status</th>
-                <th className="p-3 text-gray-500 text-sm uppercase tracking-wide">Last Login</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading
-                ? [1, 2, 3, 4, 5].map((i) => (
-                    <tr key={i}>
-                      <td className="p-2">
-                        <Skeleton />
-                      </td>
-                      <td className="p-2">
-                        <Skeleton />
-                      </td>
-                      <td className="p-2">
-                        <Skeleton width={80} />
-                      </td>
-                      <td className="p-2">
-                        <Skeleton width={120} />
-                      </td>
-                    </tr>
-                  ))
-                : (data?.recentUsers || []).map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="p-3 text-gray-700">{`${user.firstNameTH || ""} ${user.lastNameTH || ""}`}</td>
-                      <td className="p-3 text-gray-700">{user.email}</td>
-                      <td className="p-3 flex items-center gap-2">
-                        <span className={`w-3 h-3 rounded-full ${user.status === "online" ? "bg-green-500" : "bg-gray-400"}`} />
-                        {user.status}
-                      </td>
-                      <td className="p-3 text-gray-700">{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "-"}</td>
-                    </tr>
-                  ))}
-            </tbody>
-          </table>
-        </div>
-
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow">
