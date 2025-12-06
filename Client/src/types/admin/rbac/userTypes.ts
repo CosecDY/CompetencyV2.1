@@ -12,4 +12,5 @@ export interface User {
   address?: string;
   createdAt: string;
   updatedAt: string;
+  permissions?: string[];
 }

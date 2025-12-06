@@ -13,7 +13,7 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ requiredPermissions, 
 
   useEffect(() => {
     if (!loading) {
-      const hasPermission = requiredPermissions.every((p) => user?.permissions.includes(p));
+      const hasPermission = requiredPermissions.every((p) => ((user as any)?.permissions ?? []).includes(p));
       if (!hasPermission) {
         navigate("/error403", { replace: true });
       }
@@ -22,7 +22,7 @@ const PermissionRoute: React.FC<PermissionRouteProps> = ({ requiredPermissions, 
 
   if (loading) return null;
 
-  const hasPermission = requiredPermissions.every((p) => user?.permissions.includes(p));
+  const hasPermission = requiredPermissions.every((p) => ((user as any)?.permissions ?? []).includes(p));
   if (!hasPermission) return null;
 
   return <>{children}</>;

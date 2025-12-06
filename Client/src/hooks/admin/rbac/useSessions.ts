@@ -63,7 +63,7 @@ export function useSessionManager(options?: { id?: string | null; search?: strin
 
   const deleteSession = useMutation<void, Error, string>({
     mutationFn: (sessionId: string) => SessionsService.deleteSessionById(sessionId),
-    onSuccess: (sessionId: string) => {
+    onSuccess: (_data, sessionId) => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
       queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
       onToast?.("Session deleted successfully", "success");

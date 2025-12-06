@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Checkbox, Toast } from "@Components/Common/ExportComponent";
 import { DataTable } from "@Components/ExportComponent";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, CellContext } from "@tanstack/react-table";
 import { AdminLayout } from "@Layouts/AdminLayout";
 import { useAssetManager } from "@Hooks/admin/rbac/useAssetManager";
 import { useOperationManager } from "@Hooks/admin/rbac/useOperationManager";
@@ -89,7 +89,7 @@ export default function RolePermissionTable() {
     ...operations.map((op) => ({
       id: `op-${op.id}`,
       header: op.name,
-      cell: ({ row }) => {
+      cell: ({ row }: CellContext<AssetRow, unknown>) => {
         const rp = row.original.operations[op.id];
         const isAssigned = !!rp;
         const isToggling = togglingPermissionId === (rp?.id ?? op.id);
@@ -104,13 +104,13 @@ export default function RolePermissionTable() {
 
   return (
     <AdminLayout>
-      <div className="p-4 mx-auto rounded-lg bg-white">
-        <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">Role Permissions Management</h1>
+      <div className="p-4 mx-auto bg-white rounded-lg">
+        <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">Role Permissions Management</h1>
 
         <div className="mb-4">
           <label className="block mb-2 font-semibold">Select Role</label>
           <select
-            className="border rounded p-2 w-full max-w-sm"
+            className="w-full max-w-sm p-2 border rounded"
             value={selectedRoleId ?? ""}
             onChange={(e) => {
               const roleId = Number(e.target.value);
@@ -129,7 +129,7 @@ export default function RolePermissionTable() {
         </div>
 
         {!selectedRole ? (
-          <p className="text-gray-500 italic mt-4">Select a role to manage its permissions.</p>
+          <p className="mt-4 italic text-gray-500">Select a role to manage its permissions.</p>
         ) : (
           <DataTable<AssetRow> key={rolePermissionsQuery.data?.length} columns={columns} fetchPage={fetchPage} initialPageSize={10} pageSizes={[5, 10, 20]} />
         )}

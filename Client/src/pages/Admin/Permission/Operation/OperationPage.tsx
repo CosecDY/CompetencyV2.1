@@ -47,7 +47,7 @@ export default function OperationPage() {
 
   const confirmAdd = (name: string, description?: string) => {
     createOperation.mutate(
-      { id: 0, name, description: description || undefined, updatedAt: new Date().toISOString() },
+      { id: 0, name, description: description || undefined, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), assetId: 0 },
       {
         onSuccess: () => {
           handleToast("Operation created successfully!", "success");
@@ -107,15 +107,15 @@ export default function OperationPage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 z-10">
-        <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">Operations</h1>
+      <div className="z-10 flex flex-col mb-3 sm:flex-row sm:justify-between sm:items-start">
+        <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">Operations</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={openAddModal} className="flex items-center">
             <FiPlus className="mr-2" /> Add Operation
           </Button>
           <div className="relative">
-            <Input type="text" placeholder="Search operations..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
-            <FiSearch className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Input type="text" placeholder="Search operations..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
+            <FiSearch className="absolute text-gray-400 -translate-y-1/2 right-2 top-1/2" />
           </div>
         </div>
       </div>

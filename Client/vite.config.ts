@@ -33,7 +33,7 @@ export default defineConfig({
           // Admin pages
           "admin-dashboard": ["src/pages/Admin/Dashboard/DashboardPage.tsx"],
           "admin-users": ["src/pages/Admin/Users/UserPages.tsx"],
-          "admin-permissions": ["src/pages/Admin/Permission/PermissionPage.tsx"],
+          "admin-permissions": ["src/pages/Admin/Permission/Permission/PermissionPage.tsx"],
           // Admin SFIA/TPQI exports
           "admin-sfia": ["src/pages/Admin/SFIA/ExportSFIAPages.tsx"],
           "admin-tpqi": ["src/pages/Admin/TPQI/ExportTPQIPages.tsx"],

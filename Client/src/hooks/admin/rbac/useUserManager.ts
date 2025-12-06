@@ -86,7 +86,7 @@ export function useUserManager(options?: { id?: string | null; search?: string; 
   });
 
   const updateUser = useMutation<User, unknown, { id: string; payload: Partial<User> }>({
-    mutationFn: ({ id, payload }: { id: string; payload: User }) => UsersService.updateUser(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<User> }) => UsersService.updateUser(id, payload as User),
     onSuccess: (updated: User) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["user", updated.id] });
@@ -106,7 +106,7 @@ export function useUserManager(options?: { id?: string | null; search?: string; 
 
   const deleteUser = useMutation<void, unknown, string>({
     mutationFn: (userId: string) => UsersService.deleteUser(userId),
-    onSuccess: (_data: void, userId: string) => {
+    onSuccess: (_data, userId) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["user", userId] });
       onToast?.("User deleted successfully", "success");
@@ -125,7 +125,8 @@ export function useUserManager(options?: { id?: string | null; search?: string; 
 
   const assignRole = useMutation<void, Error, { userId: string; roleId: number }>({
     mutationFn: ({ userId, roleId }: { userId: string; roleId: number }) => UsersService.assignRoleToUser(userId, roleId),
-    onSuccess: ({ userId }: { userId: string; roleId: number }) => {
+    onSuccess: (_data, variables) => {
+      const { userId } = variables;
       queryClient.invalidateQueries({ queryKey: ["userRoles", userId] });
       onToast?.("Role assigned successfully", "success");
     },
@@ -143,7 +144,8 @@ export function useUserManager(options?: { id?: string | null; search?: string; 
 
   const revokeRole = useMutation<void, Error, { userId: string; roleId: number }>({
     mutationFn: ({ userId, roleId }: { userId: string; roleId: number }) => UsersService.revokeRoleFromUser(userId, roleId),
-    onSuccess: ({ userId }: { userId: string; roleId: number }) => {
+    onSuccess: (_data, variables) => {
+      const { userId } = variables;
       queryClient.invalidateQueries({ queryKey: ["userRoles", userId] });
       onToast?.("Role revoked successfully", "success");
     },

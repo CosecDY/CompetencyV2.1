@@ -64,7 +64,7 @@ export default function AssetInstancePage() {
   const confirmEdit = (newRecordId: string) => {
     if (!selectedInstance) return;
     updateInstance.mutate(
-      { id: selectedInstance.id, data: { recordId: newRecordId } },
+      { id: selectedInstance.id, data: { newRecordId: newRecordId } },
       {
         onSuccess: () => {
           handleToast("AssetInstance updated successfully!", "success");
@@ -113,15 +113,15 @@ export default function AssetInstancePage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 z-10">
-        <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">Asset Instances</h1>
+      <div className="z-10 flex flex-col mb-3 sm:flex-row sm:justify-between sm:items-start">
+        <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">Asset Instances</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={openAddModal} className="flex items-center">
             <FiPlus className="mr-2" /> Add Instance
           </Button>
           <div className="relative">
-            <Input type="text" placeholder="Search recordId..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
-            <FiSearch className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Input type="text" placeholder="Search recordId..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
+            <FiSearch className="absolute text-gray-400 -translate-y-1/2 right-2 top-1/2" />
           </div>
         </div>
       </div>
