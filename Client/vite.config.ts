@@ -42,11 +42,11 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ["client_app", "ec2-13-54-113-16.ap-southeast-2.compute.amazonaws.com"],
+    allowedHosts: ["client_app", "ec2-13-239-227-252.ap-southeast-2.compute.amazonaws.com"],
     host: "0.0.0.0",
     port: 5173,
   },
   preview: {
-    allowedHosts: ["client_app", "localhost", "127.0.0.1", "nginx", "172.19.0.4", "ec2-13-54-113-16.ap-southeast-2.compute.amazonaws.com"],
+    allowedHosts: ["client_app", "localhost", "127.0.0.1", "nginx", "172.19.0.4", "ec2-13-239-227-252.ap-southeast-2.compute.amazonaws.com"],
   },
 });
