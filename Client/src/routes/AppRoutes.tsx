@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import RouteWrapper from "./guards/RouteWrapper";
+import AdminGuard from "./guards/AdminGuard";
 import Loading from "@Components/Loading/Loading";
 
 import { adminRoutes } from "./admin/adminRoutes";
@@ -22,7 +23,14 @@ const AppRoutes: React.FC = () => (
       {/* Protected Routes */}
       <Route>
         {/* Admin Module */}
-        <Route path="admin/*" element={<RouteWrapper routes={adminRoutes} />} />
+        <Route
+          path="admin/*"
+          element={
+            <AdminGuard>
+              <RouteWrapper routes={adminRoutes} />
+            </AdminGuard>
+          }
+        />
       </Route>
     </Routes>
   </Suspense>

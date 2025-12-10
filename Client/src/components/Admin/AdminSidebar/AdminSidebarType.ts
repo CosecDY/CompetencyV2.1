@@ -10,6 +10,7 @@ export interface MenuItemBase {
   path: string;
   icon?: React.ReactNode;
   resource?: string;
+  allowedRoles?: string[];
 }
 
 export interface Group {
