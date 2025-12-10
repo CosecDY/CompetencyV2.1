@@ -68,6 +68,7 @@
 
 # volumes:
 #   db_data:
+
 version: "3.9"
 
 services:
@@ -98,6 +99,8 @@ services:
       dockerfile: Dockerfile
     container_name: competency_client
     restart: unless-stopped
+    volumes:
+      - client_dist:/usr/share/nginx/html
 
   nginx:
     image: nginx:stable
