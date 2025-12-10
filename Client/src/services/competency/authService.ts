@@ -6,6 +6,7 @@ export interface User {
   firstName: string;
   lastName: string;
   profileImage?: string;
+  role: string;
 }
 
 export interface GoogleLoginResponse {
@@ -24,6 +25,7 @@ export interface CurrentUserResponse {
   user: User;
   expiresIn: number;
   csrfToken: string;
+  permissions?: string[];
 }
 export interface CheckViewResponse {
   allowed: boolean;

@@ -10,16 +10,9 @@ import { useNavigation } from "./hooks/useNavigation";
 import { useAuth } from "./hooks/useAuth";
 
 const Navbar: React.FC = () => {
-  const {
-    auth,
-    isLoggedIn,
-    loginOpen,
-    handleLogin,
-    handleLogout,
-    openLogin,
-    closeLogin,
-  } = useAuth();
-  const { NAV_ITEMS, isActiveNavItem } = useNavigation(isLoggedIn);
+  const { auth, isLoggedIn, loginOpen, handleLogin, handleLogout, openLogin, closeLogin } = useAuth();
+  const { NAV_ITEMS, isActiveNavItem } = useNavigation(isLoggedIn, auth?.user?.role);
+
   const { menuOpen, toggleMenu, closeMenu } = useMobileMenu();
 
   return (
@@ -30,45 +23,23 @@ const Navbar: React.FC = () => {
           <Logo />
 
           {/* Desktop Navigation - center column */}
-          <DesktopNavigation
-            navItems={NAV_ITEMS}
-            isActiveNavItem={isActiveNavItem}
-          />
+          <DesktopNavigation navItems={NAV_ITEMS} isActiveNavItem={isActiveNavItem} />
 
           {/* Profile/Login - right column */}
           <div className="flex justify-end items-center">
             {/* Desktop Profile/Login */}
-            <AuthActions
-              isLoggedIn={isLoggedIn}
-              user={auth?.user}
-              onLogin={openLogin}
-              onLogout={handleLogout}
-            />
+            <AuthActions isLoggedIn={isLoggedIn} user={auth?.user} onLogin={openLogin} onLogout={handleLogout} />
 
             {/* Mobile Auth and Menu Toggle */}
             <div className="md:hidden flex items-center space-x-3">
-              <AuthActions
-                isLoggedIn={isLoggedIn}
-                user={auth?.user}
-                onLogin={openLogin}
-                onLogout={handleLogout}
-                isMobile={true}
-              />
+              <AuthActions isLoggedIn={isLoggedIn} user={auth?.user} onLogin={openLogin} onLogout={handleLogout} isMobile={true} />
               <MobileMenuToggle menuOpen={menuOpen} onToggle={toggleMenu} />
             </div>
           </div>
         </div>
 
         {/* Mobile Menu */}
-        <MobileMenu
-          menuOpen={menuOpen}
-          navItems={NAV_ITEMS}
-          isLoggedIn={isLoggedIn}
-          isActiveNavItem={isActiveNavItem}
-          onClose={closeMenu}
-          onLogin={openLogin}
-          onLogout={handleLogout}
-        />
+        <MobileMenu menuOpen={menuOpen} navItems={NAV_ITEMS} isLoggedIn={isLoggedIn} isActiveNavItem={isActiveNavItem} onClose={closeMenu} onLogin={openLogin} onLogout={handleLogout} />
       </nav>
       <Login
         open={loginOpen}

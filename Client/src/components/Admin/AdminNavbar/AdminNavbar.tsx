@@ -1,5 +1,6 @@
 import React, { useContext, useState } from "react";
-import { FiMenu, FiBell } from "react-icons/fi";
+import { FiMenu, FiHome } from "react-icons/fi";
+import { Link } from "react-router-dom";
 import AuthContext from "@Contexts/AuthContext";
 import Login from "../../Navbar/Login";
 import ProfileDisplay from "../../Navbar/ProfileDisplay";
@@ -18,10 +19,10 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onToggleSidebar }) => {
   return (
     <header className="fixed top-0 left-0 z-40 right-0 h-16 bg-white border border-gray-200 flex items-center px-4 md:px-6 transition-all duration-200">
       {/* Logo */}
-      <div className="flex items-center space-x-3">
+      <Link to="/home" className="flex items-center space-x-3 hover:opacity-80 transition">
         <img src="/src/assets/competency-logo.png" alt="Logo" className="h-9 w-9 rounded-full object-cover" />
         <span className="text-xl font-bold text-indigo-700 tracking-wide">Competency</span>
-      </div>
+      </Link>
 
       {/* Mobile sidebar toggle */}
       <div className="flex items-center ml-4">
@@ -32,10 +33,10 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onToggleSidebar }) => {
 
       {/* Right section */}
       <div className="flex items-center ml-auto space-x-5">
-        <button className="relative text-gray-500 hover:text-gray-700 transition" aria-label="Notifications">
-          <FiBell size={22} />
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center">3</span>
-        </button>
+        <Link to="/home" className="flex items-center space-x-2 text-gray-500 hover:text-indigo-600 transition duration-200" title="Back to Home">
+          <FiHome size={20} />
+          <span className="hidden md:block text-sm font-medium">Home</span>
+        </Link>
 
         {loading ? (
           <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse" />

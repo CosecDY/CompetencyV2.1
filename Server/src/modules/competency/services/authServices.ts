@@ -11,6 +11,9 @@ if (!GOOGLE_CLIENT_ID) throw new Error("Missing GOOGLE_CLIENT_ID env variable");
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+// Helper สำหรับคำนวณวันหมดอายุ (7 วัน)
+const getRefreshTokenExpiry = () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
 type UserWithRoles = User & {
   userRoles: (UserRole & {
     role: Role & {
@@ -20,12 +23,6 @@ type UserWithRoles = User & {
 };
 
 class AuthService {
-  /**
-   * Login with Google token using transaction
-   * @param googleToken Google ID token
-   * @param txClient    Optional transactional Prisma client
-   * @returns           User info + tokens
-   */
   async loginWithGoogle(googleToken: string) {
     if (!googleToken) throw new Error("Google token is required");
 
@@ -42,19 +39,16 @@ class AuthService {
     const lastNameEN = payload.family_name ?? "";
     const profileImage = payload.picture ?? "noimage.jpg";
 
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = getRefreshTokenExpiry();
 
     // Find or create user
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      // Find default role
       const defaultRole = await prisma.role.findUnique({
         where: { name: DEFAULT_USER_ROLE },
       });
       if (!defaultRole) throw new Error(`Default role "${DEFAULT_USER_ROLE}" not found`);
 
-      // Create user + assign default role
       user = await prisma.user.create({
         data: {
           email,
@@ -62,16 +56,10 @@ class AuthService {
           lastNameEN,
           profileImage,
           userRoles: {
-            create: [
-              {
-                roleId: defaultRole.id,
-              },
-            ],
+            create: [{ roleId: defaultRole.id }],
           },
         },
-        include: {
-          userRoles: true,
-        },
+        include: { userRoles: true },
       });
     }
 
@@ -97,43 +85,40 @@ class AuthService {
 
     return {
       user: {
-        userId: user.id,
+        id: user.id,
         email: user.email,
-        firstNameEN: user.firstNameEN,
-        lastNameEN: user.lastNameEN,
+        firstName: user.firstNameEN,
+        lastName: user.lastNameEN,
         profileImage: user.profileImage,
         role: primaryRole,
       },
       accessToken,
       refreshToken,
+      expiresIn: 3600,
       csrfToken,
     };
   }
 
-  /**
-   * Logout by refreshToken
-   * @param refreshToken Refresh token
-   * @param txClient     Optional transactional Prisma client
-   */
   async logout(refreshToken: string, txClient?: PrismaClient) {
     if (!refreshToken) throw new Error("Refresh token required");
     const client = txClient ?? prisma;
     await client.session.deleteMany({ where: { refreshToken } });
   }
 
-  /**
-   * Refresh token
-   * @param oldRefreshToken Existing refresh token
-   * @param txClient        Optional transactional Prisma client
-   */
   async refreshToken(oldRefreshToken: string, txClient?: PrismaClient) {
     if (!oldRefreshToken) throw new Error("Refresh token required");
 
     const client = txClient ?? prisma;
+
+    // 1. Verify JWT signature
     const payload = verifyRefreshToken(oldRefreshToken);
 
+    // 2. Check DB Session
     const storedSession = await client.session.findFirst({ where: { userId: payload.userId } });
-    if (!storedSession || storedSession.refreshToken !== oldRefreshToken) throw new Error("Invalid refresh token");
+    if (!storedSession || storedSession.refreshToken !== oldRefreshToken) {
+      if (storedSession) await client.session.delete({ where: { id: storedSession.id } });
+      throw new Error("Invalid refresh token");
+    }
 
     const userWithRoles = await client.user.findUnique({
       where: { id: payload.userId },
@@ -142,18 +127,23 @@ class AuthService {
     if (!userWithRoles) throw new Error("User not found");
 
     const primaryRole = userWithRoles.userRoles[0]?.role.name ?? DEFAULT_USER_ROLE;
+
+    // 3. Generate NEW Tokens
     const newRefreshToken = generateRefreshToken({ userId: payload.userId });
     const accessToken = generateToken({ userId: userWithRoles.id, email: userWithRoles.email, role: primaryRole });
     const csrfToken = generateCsrfToken();
+    const expiresAt = getRefreshTokenExpiry();
 
-    return { accessToken, refreshToken: newRefreshToken, csrfToken };
+    await sessionService.upsertSession(userWithRoles.id, accessToken, newRefreshToken, csrfToken, "google", expiresAt);
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: 3600,
+      csrfToken,
+    };
   }
 
-  /**
-   * Get current user with roles & permissions
-   * @param userId User ID
-   * @param txClient Optional transactional Prisma client
-   */
   async getCurrentUser(userId: string, txClient?: PrismaClient) {
     if (!userId) throw new Error("User ID required");
 
@@ -170,12 +160,14 @@ class AuthService {
     const primaryRole = userWithRoles.userRoles[0]?.role.name ?? DEFAULT_USER_ROLE;
 
     return {
-      userId: userWithRoles.id,
-      email: userWithRoles.email,
-      firstNameEN: userWithRoles.firstNameEN,
-      lastNameEN: userWithRoles.lastNameEN,
-      profileImage: userWithRoles.profileImage,
-      role: primaryRole,
+      user: {
+        id: userWithRoles.id,
+        email: userWithRoles.email,
+        firstName: userWithRoles.firstNameEN,
+        lastName: userWithRoles.lastNameEN,
+        profileImage: userWithRoles.profileImage,
+        role: primaryRole,
+      },
       permissions,
     };
   }

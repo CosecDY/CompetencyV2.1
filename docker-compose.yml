@@ -84,7 +84,6 @@ services:
     container_name: competency_client
     restart: unless-stopped
     volumes:
-      # Share ไฟล์ build ไปให้ nginx container
       - client_dist:/usr/share/nginx/html
 
   nginx:
@@ -95,7 +94,6 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # รับไฟล์จาก client container
       - client_dist:/usr/share/nginx/html:ro
     depends_on:
       - client
