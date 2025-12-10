@@ -1,20 +1,32 @@
-# Base image
-FROM node:20-alpine
+# # Base image
+# FROM node:20-alpine
 
-# Set working directory
+# # Set working directory
+# WORKDIR /app
+
+# # Copy package.json and package-lock.json
+# COPY package*.json ./
+
+# # Install dependencies
+# RUN npm ci
+
+# # Copy all source code
+# COPY . .
+
+# # Expose port for dev server
+# EXPOSE 5173
+
+# # Start frontend dev server
+# CMD ["npm", "run", "dev", "--", "--host"]
+# ---------- Build Stage ----------
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
-
-# Copy all source code
 COPY . .
+RUN npm run build
 
-# Expose port for dev server
-EXPOSE 5173
+FROM nginx:stable
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Start frontend dev server
-CMD ["npm", "run", "dev", "--", "--host"]
