@@ -78,6 +78,8 @@ services:
       dockerfile: Dockerfile
     container_name: competency_server
     restart: unless-stopped
+    env_file:
+      - .env
   client:
     build:
       context: ./Client
@@ -86,6 +88,8 @@ services:
     restart: unless-stopped
     volumes:
       - client_dist:/usr/share/nginx/html
+    env_file:
+      - .env
 
   nginx:
     image: nginx:stable
