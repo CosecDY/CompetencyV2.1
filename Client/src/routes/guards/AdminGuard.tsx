@@ -19,10 +19,7 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  const allowedAdminRoles = ["Admin", "SuperAdmin"];
-  console.log("Current User Role:", user.role);
-
-  if (!user.role || !allowedAdminRoles.includes(user.role)) {
+  if (!user.role || user.role === "User") {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 p-4">
         <div className="bg-white max-w-md w-full p-8 rounded-xl shadow-lg text-center border border-gray-200">

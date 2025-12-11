@@ -16,7 +16,7 @@ export const useNavigation = (isLoggedIn: boolean, role?: string) => {
       baseItems.push({ name: "Profile", path: "/profile" });
       baseItems.push({ name: "Portfolio", path: "/portfolio" });
 
-      if (role === "Admin") {
+      if (role && role !== "User") {
         baseItems.push({
           name: "Admin Panel",
           path: "/admin/dashboard",
