@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch src --ext ts,js,json --exec \"ts-node -r tsconfig-paths/register src/server.ts\"",
-    "build": "tsc",
+    "build": "npx prisma generate --schema=prisma/competency.prisma && npx prisma generate --schema=prisma/sfia.prisma && npx prisma generate --schema=prisma/tpqi.prisma && tsc && tsc-alias",
     "start": "node dist/server.js",
     "serve": "node -r tsconfig-paths/register dist/server.js",
     "test": "cd ../tests && vitest run --config vitest.config.server.ts",
@@ -64,6 +64,7 @@
     "swagger-autogen": "^2.23.7",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   }
