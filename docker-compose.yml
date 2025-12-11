@@ -79,7 +79,7 @@ services:
     container_name: competency_server
     restart: unless-stopped
     env_file:
-      - .env
+      - ./Server/.env
   client:
     build:
       context: ./Client
@@ -89,7 +89,7 @@ services:
     volumes:
       - client_dist:/usr/share/nginx/html
     env_file:
-      - .env
+      - ./Client/.env
 
   nginx:
     image: nginx:stable
