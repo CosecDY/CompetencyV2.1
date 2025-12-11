@@ -19,9 +19,12 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onToggleSidebar }) => {
   return (
     <header className="fixed top-0 left-0 z-40 right-0 h-16 bg-white border border-gray-200 flex items-center px-4 md:px-6 transition-all duration-200">
       {/* Logo */}
-      <Link to="/home" className="flex items-center space-x-3 hover:opacity-80 transition">
-        <img src="/src/assets/competency-logo.png" alt="Logo" className="h-9 w-9 rounded-full object-cover" />
-        <span className="text-xl font-bold text-indigo-700 tracking-wide">Competency</span>
+      <Link to="/home" className="group flex items-center gap-2 transition-all duration-300 hover:scale-105">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-600 ring-offset-2 transition-all group-hover:bg-indigo-700">
+          <span className="text-lg font-bold">C</span>
+        </div>
+
+        <span className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 via-purple-800 to-indigo-700">CompetencyV2</span>
       </Link>
 
       {/* Mobile sidebar toggle */}
