@@ -16,6 +16,7 @@ export default defineConfig({
       "@Types": path.resolve(__dirname, "src/types"),
       "@Layouts": path.resolve(__dirname, "src/layouts"),
       "@Utils": path.resolve(__dirname, "src/utils"),
+      "@Assets": path.resolve(__dirname, "src/assets"),
     },
   },
   // Source map configuration

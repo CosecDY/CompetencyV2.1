@@ -12,30 +12,16 @@
     // — path aliases —
     "baseUrl": "src",
     "paths": {
-      "@Components/*": [
-        "components/*"
-      ],
-      "@Contexts/*": [
-        "contexts/*"
-      ],
-      "@Hooks/*": [
-        "hooks/*"
-      ],
-      "@Services/*": [
-        "services/*"
-      ],
-      "@Pages/*": [
-        "pages/*"
-      ],
-      "@Types/*": [
-        "types/*"
-      ],
-      "@Layouts/*": [
-        "layouts/*"
-      ],
-      "@Utils/*": [
-        "utils/*"
-      ]
+      "@/*": ["src/*"],
+      "@Modules/*": ["src/modules/*"],
+      "@Components/*": ["components/*"],
+      "@Contexts/*": ["contexts/*"],
+      "@Hooks/*": ["hooks/*"],
+      "@Services/*": ["services/*"],
+      "@Pages/*": ["pages/*"],
+      "@Types/*": ["types/*"],
+      "@Layouts/*": ["layouts/*"],
+      "@Utils/*": ["utils/*"]
     },
     // — emit & build info —
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
@@ -47,12 +33,5 @@
     "noUncheckedSideEffectImports": true,
     "useDefineForClassFields": true
   },
-  "include": [
-    "src",
-    "vite.config.ts",
-    "vitest.config.ts",
-    "../Server/src/routes",
-    "__tests__/refreshInterceptor.test.ts",
-    "../Server/src/modules/sfia/services/getAllUsers.ts"
-  ]
+  "include": ["src", "vite.config.ts", "vitest.config.ts", "../Server/src/routes", "__tests__/refreshInterceptor.test.ts", "../Server/src/modules/sfia/services/getAllUsers.ts"]
 }

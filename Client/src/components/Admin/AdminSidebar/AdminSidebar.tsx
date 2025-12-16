@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FiChevronDown, FiChevronRight, FiChevronLeft, FiAlertCircle } from "react-icons/fi";
 import { checkViewPermission } from "@Services/competency/authService";
 import { rbacGroups, frameworks, mainMenu } from "./MenuItem";
-import { Modal } from "@Components/Common/Modal/Modal";
+import { Modal } from "@Components/Admin/Common/Modal/Modal";
 import { AdminSidebarProps, MenuItemBase, Group } from "./AdminSidebarType";
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, mobileOpen, onToggle, onMobileClose }) => {

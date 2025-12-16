@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { AdminSidebar, AdminNavbar } from "@Components/ExportComponent";
+import { AdminSidebar, AdminNavbar } from "@Components/Admin/ExportComponent";
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);

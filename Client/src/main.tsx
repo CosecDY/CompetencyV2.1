@@ -1,13 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { Loading } from "@Components/ExportComponent";
+import { Loading } from "@Components/Admin/ExportComponent";
 import { ThemeProvider } from "@Contexts/ThemeContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import App from "./App";
 import { AuthProvider } from "./contexts/AuthContext";
-import ScrollToTop from "./components/Common/ScrolToTop";
+import ScrollToTop from "@Components/Competency/ScrolToTop";
 import "./styles/global.css";
 
 const rootElement = document.getElementById("root");

@@ -2,8 +2,8 @@ import React, { useContext, useState } from "react";
 import { FiMenu, FiHome } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import AuthContext from "@Contexts/AuthContext";
-import Login from "../../Navbar/Login";
-import ProfileDisplay from "../../Navbar/ProfileDisplay";
+import Login from "@Components/Competency/Navbar/Login";
+import ProfileDisplay from "@Components/Competency/Navbar/ProfileDisplay";
 
 interface AdminNavbarProps {
   collapsed: boolean;

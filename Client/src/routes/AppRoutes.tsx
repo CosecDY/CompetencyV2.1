@@ -2,11 +2,11 @@ import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import RouteWrapper from "./guards/RouteWrapper";
 import AdminGuard from "./guards/AdminGuard";
-import Loading from "@Components/Loading/Loading";
+import Loading from "@Components/Competency/Loading/Loading";
 
 import { adminRoutes } from "./admin/adminRoutes";
 import { HomePage, ResultsPage, CompetencyDetailPage, ProfilePage, AboutPage } from "@Pages/ExportPages";
-import PortfolioPage from "@Pages/PortfolioPage/PortfolioPage";
+import PortfolioPage from "modules/competency/PortfolioPage/PortfolioPage";
 
 const AppRoutes: React.FC = () => (
   <Suspense fallback={<Loading />}>

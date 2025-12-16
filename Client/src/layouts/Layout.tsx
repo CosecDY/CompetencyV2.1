@@ -1,5 +1,5 @@
 import React from "react";
-import { Navbar, Footer } from "@Components/ExportComponent";
+import { Navbar, Footer } from "@Components/Admin/ExportComponent";
 
 interface LayoutProps {
   children: React.ReactNode;

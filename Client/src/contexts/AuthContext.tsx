@@ -1,7 +1,7 @@
 import React, { createContext, useState, ReactNode, useContext, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLoginResponse, loginWithGoogle, logout as logoutService, getCurrentUser as fetchCurrentUserService, refreshAccessToken } from "@Services/competency/authService";
-import Modal from "@Components/Common/Modal/Modal";
+import { Modal } from "@Components/Admin/ExportComponent";
 
 export interface AuthContextType {
   user: GoogleLoginResponse["user"] | null;
