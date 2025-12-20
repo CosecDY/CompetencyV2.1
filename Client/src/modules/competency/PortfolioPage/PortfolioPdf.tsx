@@ -1,140 +1,145 @@
-import jsPDF from "jspdf";
+import jsPDF, { jsPDF as jsPDFType } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { embedThaiFont } from "@Utils/pdfThaiFont";
-import { OccupationType, SkillType, UserType } from "../mockOccupations";
+import { PortfolioData } from "./types/portfolio";
 
-export async function generatePortfolioPdf(
-  user: UserType,
-  occupation: OccupationType
-) {
+export async function generatePortfolioPdf(portfolio: PortfolioData) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const margin = 40;
   let cursorY = margin;
 
   await embedThaiFont(doc);
 
-  doc.setFontSize(18);
-  doc.text("Portfolio Summary", margin, cursorY);
-  cursorY += 30;
+  // --- HEADER SECTION ---
+  doc.setFont("THSarabunNew", "bold");
+  doc.setFontSize(22);
+  doc.text("Portfolio Report", margin, cursorY);
+
+  doc.setFontSize(10);
+  doc.setFont("THSarabunNew", "normal");
+  const dateStr = new Date().toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  doc.text(`Generated on: ${dateStr}`, 550, cursorY, { align: "right" });
+
+  cursorY += 35;
+
+  // --- INFO SECTION ---
+  doc.setFontSize(16);
+  doc.setFont("THSarabunNew", "bold");
+  doc.text(`Portfolio Name: ${portfolio.portfolioName}`, margin, cursorY);
+  cursorY += 20;
 
   doc.setFontSize(12);
-  doc.setFont("THSarabunNew");
-  doc.text(`Name: ${user.name}`, margin, cursorY);
-  cursorY += 20;
-  doc.text(
-    `Email: ${user.name.toLowerCase().replace(" ", ".")}@example.com`,
-    margin,
-    cursorY
-  );
-  cursorY += 20;
-  doc.text(`Role: Full Stack Developer`, margin, cursorY);
-  cursorY += 20;
-  doc.text(`Location: Bangkok, Thailand`, margin, cursorY);
-  cursorY += 20;
-  doc.text(
-    "Bio: Passionate developer with experience in building full-stack applications. Skilled in React, Node.js, and cloud deployment. Always eager to learn new technologies and improve code quality.",
-    margin,
-    cursorY,
-    {
-      maxWidth: 500,
-    }
-  );
-  cursorY += 40;
+  doc.setFont("THSarabunNew", "normal");
 
-  const totalSkills = occupation.skills.length;
-  const evidenceCount = Object.values(user.evidenceUrls).filter(
-    (url) => url.trim() !== ""
-  ).length;
+  // User Info
+  doc.text(`User Email: ${portfolio.userEmail || "-"}`, margin, cursorY);
+  cursorY += 20;
+
+  // Description
+  if (portfolio.portfolioDescription) {
+    const descLines = doc.splitTextToSize(`Description: ${portfolio.portfolioDescription}`, 500);
+    doc.text(descLines, margin, cursorY);
+    cursorY += descLines.length * 15 + 10;
+  } else {
+    cursorY += 10;
+  }
+
+  // --- STATS OVERVIEW ---
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margin, cursorY, 550, cursorY);
+  cursorY += 20;
 
   doc.setFontSize(14);
-  doc.text("Statistics", margin, cursorY);
+  doc.setFont("THSarabunNew", "bold");
+  doc.text("Summary Statistics", margin, cursorY);
   cursorY += 20;
+
   doc.setFontSize(12);
-  doc.text(`Occupation: ${occupation.name}`, margin, cursorY);
-  cursorY += 20;
-  doc.text(`Total Skills: ${totalSkills}`, margin, cursorY);
-  cursorY += 20;
-  doc.text(`Evidence Submitted: ${evidenceCount}`, margin, cursorY);
+  doc.setFont("THSarabunNew", "normal");
+  doc.text(`• SFIA Skills Selected: ${portfolio.sfiaSkills.length} items`, margin + 10, cursorY);
+  cursorY += 15;
+  doc.text(`• TPQI Careers Selected: ${portfolio.tpqiCareers.length} items`, margin + 10, cursorY);
   cursorY += 30;
 
-  const levelProgressData: Record<
-    string,
-    { total: number; completed: number }
-  > = {};
-  occupation.skills.forEach((skill) => {
-    const lvl = skill.level;
-    if (!levelProgressData[lvl]) {
-      levelProgressData[lvl] = { total: 0, completed: 0 };
+  // --- TABLE 1: SFIA SKILLS ---
+  if (portfolio.sfiaSkills.length > 0) {
+    doc.setFontSize(14);
+    doc.setFont("THSarabunNew", "bold");
+    doc.text("1. SFIA Competencies", margin, cursorY);
+    cursorY += 10;
+
+    const sfiaRows = portfolio.sfiaSkills.map((item) => [item.skillCode, item.skill?.name || "-", item.level?.name || "-", `${item.skillPercent}%`]);
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Code", "Skill Name", "Level", "Progress"]],
+      body: sfiaRows,
+      margin: { left: margin, right: margin },
+      styles: {
+        font: "THSarabunNew",
+        fontSize: 11,
+        cellPadding: 4,
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      columnStyles: {
+        0: { cellWidth: 50 }, // Code
+        1: { cellWidth: "auto" }, // Name
+        2: { cellWidth: 60 }, // Level
+        3: { cellWidth: 50, halign: "center" }, // Progress
+      },
+    });
+
+    cursorY = (doc as unknown as jsPDFType & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 30;
+  }
+
+  // --- TABLE 2: TPQI CAREERS ---
+  if (portfolio.tpqiCareers.length > 0) {
+    if (cursorY > 700) {
+      doc.addPage();
+      cursorY = margin;
     }
-    levelProgressData[lvl].total += 1;
-    if (user.evidenceUrls[skill.id]?.trim() !== "") {
-      levelProgressData[lvl].completed += 1;
-    }
-  });
 
-  doc.setFontSize(14);
-  doc.text("Level Progress", margin, cursorY);
-  cursorY += 20;
-  Object.entries(levelProgressData).forEach(([level, { total, completed }]) => {
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    doc.setFontSize(12);
-    doc.text(`${level}: ${percent}% (${completed}/${total})`, margin, cursorY);
-    cursorY += 18;
-  });
-  cursorY += 20;
+    doc.setFontSize(14);
+    doc.setFont("THSarabunNew", "bold");
+    doc.text("2. TPQI Professional Standards", margin, cursorY);
+    cursorY += 10;
 
-  doc.setFontSize(14);
-  doc.text("รายละเอียดทักษะ (Skills Details)", margin, cursorY);
-  cursorY += 20;
+    const tpqiRows = portfolio.tpqiCareers.map((item) => [item.career?.name || "-", item.level?.name || "-", `${item.skillPercent}%`, `${item.knowledgePercent}%`]);
 
-  const tableColumn = [
-    "Skill Name",
-    "Framework",
-    "Level",
-    "Has Evidence",
-    "Evidence URL",
-    "Responsibilities",
-    "Requirements",
-  ];
-  const tableRows: string[][] = [];
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Career / Standard", "Level", "Skill %", "Knowledge %"]],
+      body: tpqiRows,
+      margin: { left: margin, right: margin },
+      styles: {
+        font: "THSarabunNew",
+        fontSize: 11,
+        cellPadding: 4,
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [39, 174, 96],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 50, halign: "center" },
+        3: { cellWidth: 50, halign: "center" },
+      },
+    });
+  }
 
-  occupation.skills.forEach((skill: SkillType) => {
-    const hasEv = Boolean(user.evidenceUrls[skill.id]?.trim() !== "");
-    const respText = skill.responsibilities.length
-      ? skill.responsibilities.join("\n")
-      : "-";
-    const reqText = skill.requirements.length
-      ? skill.requirements.join("\n")
-      : "-";
-    tableRows.push([
-      skill.name,
-      skill.framework,
-      skill.level,
-      hasEv ? "Yes" : "No",
-      hasEv ? user.evidenceUrls[skill.id] : "-",
-      respText,
-      reqText,
-    ]);
-  });
-
-  autoTable(doc, {
-    startY: cursorY,
-    head: [tableColumn],
-    body: tableRows,
-    margin: { left: margin, right: margin },
-    styles: {
-      font: "THSarabunNew",
-      fontSize: 10,
-      cellPadding: 2,
-      overflow: "linebreak",
-      valign: "top",
-    },
-    headStyles: {
-      fillColor: [41, 128, 185],
-      textColor: 255,
-      font: "THSarabunNew",
-    },
-  });
-
-  doc.save(`Portfolio_${user.name.replace(" ", "_")}.pdf`);
+  const safeName = (portfolio.portfolioName || "Portfolio").replace(/[^a-z0-9ก-๙]/gi, "_");
+  doc.save(`Portfolio_${safeName}.pdf`);
 }

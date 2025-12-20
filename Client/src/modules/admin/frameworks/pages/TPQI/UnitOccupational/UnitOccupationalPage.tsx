@@ -161,10 +161,11 @@ export default function UnitOccupationalPage() {
                 setSelectedRow(null);
                 setModalType("add");
               }}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
             >
-              <FiPlus className="w-4 h-4" />
-              Add Unit–Occupational
+              <div className="flex items-center">
+                <FiPlus className="w-4 h-4 mr-2" />
+                Add Unit–Occupational
+              </div>
             </Button>
             <div className="relative w-full sm:w-80">
               <Input

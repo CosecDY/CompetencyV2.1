@@ -7,7 +7,7 @@ import { prismaSfia } from "@/db/prismaClients";
  * @property {number} id - The ID of the deleted evidence.
  * @property {string|null} text - The text content of the evidence.
  * @property {number|null} subSkillId - The sub-skill ID associated with the evidence.
- * @property {number|null} dataCollectionId - The data collection ID.
+ * @property {string} userId - The user ID who owned the evidence.
  * @property {string|null} evidenceUrl - The URL of the deleted evidence.
  * @property {Date} createdAt - When the evidence was originally created.
  * @property {string} approvalStatus - The approval status of the evidence.
@@ -16,7 +16,7 @@ export interface DeleteEvidenceResult {
   id: number;
   text: string | null;
   subSkillId: number | null;
-  dataCollectionId: number | null;
+  userId: string; // [UPDATED] Replaced dataCollectionId with userId
   evidenceUrl: string | null;
   createdAt: Date;
   approvalStatus: string;
@@ -36,29 +36,8 @@ export interface DeleteEvidenceResult {
  * @returns {Promise<DeleteEvidenceResult>} The deleted evidence data for confirmation.
  *
  * @throws {Error} If the evidence ID is invalid, evidence not found, or database operation fails.
- *
- * @example
- * // Delete evidence by ID
- * try {
- *   const deletedEvidence = await deleteEvidenceById('123');
- *   console.log(`Deleted evidence: ${deletedEvidence.text}`);
- * } catch (error) {
- *   console.error('Failed to delete evidence:', error.message);
- * }
- *
- * @example
- * // Handle evidence not found
- * try {
- *   await deleteEvidenceById('999');
- * } catch (error) {
- *   if (error.message.includes('not found')) {
- *     console.log('Evidence already deleted or does not exist');
- *   }
- * }
  */
-export async function deleteEvidenceById(
-  id: string
-): Promise<DeleteEvidenceResult> {
+export async function deleteEvidenceById(id: string): Promise<DeleteEvidenceResult> {
   try {
     // Validate input parameter
     if (!id || typeof id !== "string" || id.trim().length === 0) {
@@ -76,7 +55,15 @@ export async function deleteEvidenceById(
       where: { id: numericId },
     });
 
-    return result as DeleteEvidenceResult;
+    return {
+      id: result.id,
+      text: result.text,
+      subSkillId: result.subSkillId,
+      userId: result.userId, // [UPDATED] Return userId directly
+      evidenceUrl: result.evidenceUrl,
+      createdAt: result.createdAt,
+      approvalStatus: result.approvalStatus,
+    };
   } catch (error: any) {
     // Handle Prisma-specific errors
     if (error.code === "P2025") {
@@ -85,9 +72,7 @@ export async function deleteEvidenceById(
 
     // Handle other database errors
     if (error.code?.startsWith("P")) {
-      throw new Error(
-        `Database error while deleting evidence: ${error.message}`
-      );
+      throw new Error(`Database error while deleting evidence: ${error.message}`);
     }
 
     // Handle validation errors
@@ -97,9 +82,7 @@ export async function deleteEvidenceById(
 
     // Handle unexpected errors
     console.error("Unexpected error in deleteEvidenceById:", error);
-    throw new Error(
-      `Failed to delete evidence with ID '${id}': ${error.message}`
-    );
+    throw new Error(`Failed to delete evidence with ID '${id}': ${error.message}`);
   }
 }
 
@@ -118,20 +101,8 @@ export async function deleteEvidenceById(
  * @returns {Promise<DeleteEvidenceResult|null>} The deleted evidence data, or null if no evidence found.
  *
  * @throws {Error} If parameters are invalid or database operation fails.
- *
- * @example
- * // Delete evidence by subskill ID and user
- * const deleted = await deleteEvidenceBySubSkillAndUser(123, 'user-456');
- * if (deleted) {
- *   console.log(`Deleted evidence: ${deleted.evidenceUrl}`);
- * } else {
- *   console.log('No evidence found to delete');
- * }
  */
-export async function deleteEvidenceBySubSkillAndUser(
-  subSkillId: number,
-  userId: string
-): Promise<DeleteEvidenceResult | null> {
+export async function deleteEvidenceBySubSkillAndUser(subSkillId: number, userId: string): Promise<DeleteEvidenceResult | null> {
   try {
     // Validate input parameters
     if (!subSkillId || !userId) {
@@ -139,17 +110,16 @@ export async function deleteEvidenceBySubSkillAndUser(
     }
 
     // Validate subSkillId is a positive number
-    if (typeof subSkillId !== 'number' || subSkillId <= 0) {
+    if (typeof subSkillId !== "number" || subSkillId <= 0) {
       throw new Error("SubSkill ID must be a positive number");
     }
 
     // Find the evidence to delete
+    // [UPDATED] Changed query to check userId directly on Information table
     const evidenceToDelete = await prismaSfia.information.findFirst({
       where: {
         subSkillId: subSkillId,
-        dataCollection: {
-          userId: userId.trim(),
-        },
+        userId: userId.trim(), // Direct check
       },
       orderBy: {
         createdAt: "desc", // Get the most recent evidence
@@ -166,12 +136,18 @@ export async function deleteEvidenceBySubSkillAndUser(
       where: { id: evidenceToDelete.id },
     });
 
-    return result as DeleteEvidenceResult;
+    return {
+      id: result.id,
+      text: result.text,
+      subSkillId: result.subSkillId,
+      userId: result.userId, // [UPDATED] Return userId directly
+      evidenceUrl: result.evidenceUrl,
+      createdAt: result.createdAt,
+      approvalStatus: result.approvalStatus,
+    };
   } catch (error: any) {
     console.error("Error deleting evidence by subskill and user:", error);
-    throw new Error(
-      `Failed to delete evidence for subskill: ${subSkillId} and user: ${userId}`
-    );
+    throw new Error(`Failed to delete evidence for subskill: ${subSkillId} and user: ${userId}`);
   }
 }
 
@@ -181,8 +157,6 @@ export async function deleteEvidenceBySubSkillAndUser(
  * @deprecated Use deleteEvidenceById instead.
  * This function maintains backward compatibility but should be replaced in new code.
  */
-export async function delEvidenceServices(
-  id: string
-): Promise<DeleteEvidenceResult> {
+export async function delEvidenceServices(id: string): Promise<DeleteEvidenceResult> {
   return deleteEvidenceById(id);
 }

@@ -33,8 +33,18 @@ const getEnvVar = (key: string): string => {
  */
 export const generateToken = (payload: AccessTokenPayload): string => {
   const secret = getEnvVar("JWT_ACCESS_SECRET_KEY");
-  const expiration = parseInt(getEnvVar("JWT_ACCESS_EXPIRATION"), 10);
-  return jwt.sign(payload, secret as Secret, { expiresIn: expiration });
+  const expirationEnv = getEnvVar("JWT_ACCESS_EXPIRATION");
+  const isNumeric = /^\d+$/.test(expirationEnv);
+
+  let expiration: string | number;
+
+  if (isNumeric) {
+    expiration = parseInt(expirationEnv, 10);
+  } else {
+    expiration = expirationEnv;
+  }
+
+  return jwt.sign(payload, secret as Secret, { expiresIn: expiration } as SignOptions);
 };
 
 /**
@@ -51,9 +61,18 @@ export const generateToken = (payload: AccessTokenPayload): string => {
  */
 export const verifyToken = (token: string): AccessTokenPayload => {
   const secret = getEnvVar("JWT_ACCESS_SECRET_KEY");
+
   try {
     return jwt.verify(token, secret as Secret) as AccessTokenPayload;
-  } catch {
+  } catch (error: any) {
+    console.error("verifyToken Failed:", error.message);
+
+    if (error.name === "TokenExpiredError") {
+      throw new Error("Token expired");
+    } else if (error.name === "JsonWebTokenError") {
+      throw new Error("Invalid token signature or format");
+    }
+
     throw new Error("Invalid token");
   }
 };

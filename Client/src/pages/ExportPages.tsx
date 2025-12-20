@@ -2,6 +2,9 @@ export { default as HomePage } from "modules/competency/Home/HomePage";
 export { default as ResultsPage } from "modules/competency/SearchResults/SearchResultsPage";
 export { default as CompetencyDetailPage } from "modules/competency/competencyDetail/CompetencyDetailPage";
 export { default as ProfilePage } from "modules/competency/ProfilePage/ProfilePage";
+export { default as CreatePortfolioPage } from "modules/competency/PortfolioPage/CreatePortfolioPage";
+export { default as EditPortfolioPage } from "modules/competency/PortfolioPage/EditPortfolioPage";
+export { default as PortfolioPage } from "modules/competency/PortfolioPage/PortfolioPage";
 export { default as AboutPage } from "modules/competency/About/AboutPage";
 
 export { default as UserPage } from "modules/admin/Users/pages/UserPages";

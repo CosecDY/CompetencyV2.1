@@ -6,42 +6,29 @@ const api = axios.create({
   withCredentials: true,
 });
 
-let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
-
-export const scheduleTokenRefresh = (expiresIn: number) => {
-  if (refreshTimeout) clearTimeout(refreshTimeout);
-  const delay = Math.max((expiresIn - 60) * 1000, 0);
-
-  refreshTimeout = setTimeout(async () => {
-    try {
-      const res = await api.post("/v0/auth/refresh");
-      const { accessToken, expiresIn: newExpiresIn } = res.data || {};
-
-      if (accessToken && newExpiresIn) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-        scheduleTokenRefresh(newExpiresIn);
-      } else {
-        alert("Session expired. Please login again.");
-        setTimeout(() => (window.location.href = "/home"), 1500);
-      }
-    } catch {
-      alert("Session expired. Please login again.");
-      setTimeout(() => (window.location.href = "/home"), 1500);
+api.interceptors.request.use(
+  (config) => {
+    const csrfToken = Cookies.get("csrfToken");
+    if (csrfToken) {
+      config.headers = config.headers || {};
+      config.headers["X-CSRF-Token"] = csrfToken;
     }
-  }, delay);
-};
 
-api.interceptors.request.use((config) => {
-  const token = Cookies.get("accessToken");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers["Authorization"] = `Bearer ${token}`;
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  const csrfToken = Cookies.get("csrfToken");
-  if (csrfToken) config.headers["X-CSRF-Token"] = csrfToken;
-
-  return config;
-});
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn("API Unauthorized: Possible session expiry");
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

@@ -124,8 +124,10 @@ export default function CareerPage() {
           <p className="mt-1 text-sm text-gray-600">Manage career</p>
         </div>
         <div className="flex flex-col items-end space-y-2">
-          <Button size="md" onClick={openAdd} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Career
+          <Button size="md" onClick={openAdd}>
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add Career
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search by career name..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />

@@ -121,8 +121,10 @@ export default function SubSkillPage() {
       <div className="z-10 flex flex-col mb-3 sm:flex-row sm:justify-between sm:items-start">
         <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">SubSkills</h1>
         <div className="flex flex-col items-end space-y-2">
-          <Button size="md" onClick={openAdd} className="flex items-center">
-            <FiPlus className="mr-2" /> Add SubSkill
+          <Button size="md" onClick={openAdd}>
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add SubSkill
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search sub-skills..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />

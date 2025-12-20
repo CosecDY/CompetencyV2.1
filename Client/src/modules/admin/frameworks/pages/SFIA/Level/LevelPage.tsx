@@ -126,8 +126,11 @@ export default function LevelTablePage() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 z-10">
         <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">Levels</h1>
         <div className="flex flex-col items-end space-y-2">
-          <Button size="md" onClick={openAddModal} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Level
+          <Button size="md" onClick={openAddModal}>
+            <div className="flex items-center">
+              <FiPlus className="mr-2" />
+              <span>Add Level</span>
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search levels..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />

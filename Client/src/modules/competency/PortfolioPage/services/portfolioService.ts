@@ -1,12 +1,43 @@
+import api from "@Services/api";
 import { GetSfiaSummaryService, SfiaSummaryStats } from "./getSfiaSummaryAPI";
 import { GetTpqiSummaryService, TpqiSummaryStats } from "./getTpqiSummaryAPI";
 import { PortfolioData } from "../types/portfolio";
 
+// ==========================================
+// Interfaces
+// ==========================================
+
 /**
- * Interface for complete portfolio data combining SFIA and TPQI summaries.
+ * ข้อมูลสำหรับส่งไปสร้าง Portfolio ใหม่
  */
+export interface CreatePortfolioRequest {
+  userId: string;
+  name: string;
+  description?: string;
+  items: Array<{
+    sourceType: "SFIA" | "TPQI";
+    externalId: string; // SFIA=SkillCode, TPQI=ID
+  }>;
+}
+
+export interface PortfolioListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  updatedAt: string;
+  _count: {
+    items: number;
+  };
+}
+
 export interface CompletePortfolioData {
+  userId: string;
   userEmail: string;
+  portfolioInfo?: {
+    id: string;
+    name: string;
+    description: string | null;
+  };
   sfiaSummary: SfiaSummaryStats | null;
   tpqiSummary: TpqiSummaryStats | null;
   overallStats: {
@@ -19,10 +50,10 @@ export interface CompletePortfolioData {
   lastUpdated: string;
 }
 
-/**
- * Service class for managing complete portfolio data.
- * Coordinates between SFIA and TPQI services to provide unified portfolio information.
- */
+// ==========================================
+// Service Class
+// ==========================================
+
 export class PortfolioService {
   private readonly sfiaService: GetSfiaSummaryService;
   private readonly tpqiService: GetTpqiSummaryService;
@@ -33,37 +64,30 @@ export class PortfolioService {
   }
 
   /**
-   * Fetches complete portfolio data including both SFIA and TPQI summaries.
-   *
-   * @param userEmail - The user's email address for the portfolio
-   * @returns Promise<CompletePortfolioData> - Complete portfolio data
+   * 1. GET MASTER DATA: ดึงข้อมูล "ทั้งหมด" (เพื่อเอาไปเลือกสร้าง Portfolio)
+   * ใช้ sub-services ดึงข้อมูลดิบจาก SFIA และ TPQI
    */
-  async getCompletePortfolioData(userEmail: string): Promise<CompletePortfolioData> {
+  async getMasterPortfolioData(userId: string, userEmail: string): Promise<CompletePortfolioData> {
     try {
-      // Fetch both SFIA and TPQI data in parallel
       const [sfiaResponse, tpqiResponse] = await Promise.allSettled([this.sfiaService.getUserSummary(), this.tpqiService.getUserSummary()]);
 
-      // Process SFIA data
+      // Process SFIA
       let sfiaSummary: SfiaSummaryStats | null = null;
       if (sfiaResponse.status === "fulfilled" && sfiaResponse.value.success) {
         sfiaSummary = sfiaResponse.value.data || null;
-        console.log("Fetched SFIA summary:", sfiaSummary);
-      } else {
-        console.warn("Failed to fetch SFIA summary:", sfiaResponse.status === "rejected" ? sfiaResponse.reason : "API returned no data");
       }
 
-      // Process TPQI data
+      // Process TPQI
       let tpqiSummary: TpqiSummaryStats | null = null;
       if (tpqiResponse.status === "fulfilled" && tpqiResponse.value.success) {
         tpqiSummary = tpqiResponse.value.data || null;
-      } else {
-        console.warn("Failed to fetch TPQI summary:", tpqiResponse.status === "rejected" ? tpqiResponse.reason : "API returned no data");
       }
 
-      // Calculate overall statistics
+      // คำนวณ Stats รวม
       const overallStats = this.calculateOverallStats(sfiaSummary, tpqiSummary);
 
       return {
+        userId,
         userEmail,
         sfiaSummary,
         tpqiSummary,
@@ -71,164 +95,173 @@ export class PortfolioService {
         lastUpdated: new Date().toISOString(),
       };
     } catch (error) {
-      console.error("Error fetching complete portfolio data:", error);
-      throw new Error("ไม่สามารถโหลดข้อมูลพอร์ตโฟลิโอได้");
+      console.error("Error fetching master data:", error);
+      throw new Error("ไม่สามารถโหลดข้อมูล Master Data ได้");
     }
   }
 
   /**
-   * Converts the complete portfolio data to the format expected by the Portfolio page.
-   *
-   * @param portfolioData - The complete portfolio data
-   * @returns PortfolioData formatted for the UI
+   * 2. CREATE: สร้าง Portfolio ใหม่
    */
-  convertToPortfolioData(portfolioData: CompletePortfolioData): PortfolioData {
-    console.log("Converting portfolio data:", portfolioData);
+  async createPortfolio(data: CreatePortfolioRequest): Promise<{ success: boolean; portfolioId?: string; error?: string }> {
+    try {
+      const response = await api.post("/competency/portfolio/create", data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Failed to create portfolio:", error);
+      return {
+        success: false,
+        error: error.response?.data?.message || "สร้าง Portfolio ไม่สำเร็จ",
+      };
+    }
+  }
 
-    // Convert SFIA summary to sfiaSkills format
+  /**
+   * 3. LIST: ดึงรายชื่อ Portfolio ทั้งหมดของ User (Dashboard)
+   */
+  async getUserPortfolios(userId: string): Promise<PortfolioListItem[]> {
+    try {
+      const response = await api.get(`/competency/portfolio/user/${userId}`);
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error("Failed to list portfolios:", error);
+      return [];
+    }
+  }
+
+  /**
+   * 4. GET BY ID: ดึงข้อมูล Portfolio รายเล่ม (View Detail)
+   */
+  async getPortfolioById(portfolioId: string): Promise<PortfolioData | null> {
+    try {
+      const response = await api.get(`/competency/portfolio/${portfolioId}`);
+      if (response.data.success) {
+        const rawData = response.data.data as CompletePortfolioData;
+        return this.convertToPortfolioData(rawData);
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error fetching portfolio ${portfolioId}:`, error);
+      return null;
+    }
+  }
+
+  async updatePortfolio(id: string, data: { name: string; description: string; items: any[] }) {
+    const response = await api.put(`/competency/portfolio/${id}`, data);
+    return response.data;
+  }
+
+  /**
+   * 5. DELETE: ลบ Portfolio
+   */
+  async deletePortfolio(portfolioId: string): Promise<boolean> {
+    try {
+      const response = await api.delete(`/competency/portfolio/${portfolioId}`);
+      return response.data.success;
+    } catch (error) {
+      console.error(`Error deleting portfolio ${portfolioId}:`, error);
+      return false;
+    }
+  }
+
+  // ==========================================
+  // Helpers / Mappers
+  // ==========================================
+
+  convertToPortfolioData(data: CompletePortfolioData): PortfolioData {
+    // SFIA Mapping
     const sfiaSkills =
-      portfolioData.sfiaSummary?.skillSummaries?.map((skill) => {
-        console.log("Converting skill:", skill);
-        return {
-          id: skill.id,
-          userEmail: portfolioData.userEmail, // Use the userEmail from portfolio data
-          skillCode: skill.skillCode,
+      data.sfiaSummary?.skillSummaries?.map((skill) => ({
+        id: skill.id,
+        userId: data.userId,
+        userEmail: data.userEmail,
+        skillCode: skill.skillCode,
+        levelId: skill.levelId,
+        skillPercent: skill.skillPercent,
+        // Map ให้เข้ากับ structure ลึกๆ ของ UI เดิม
+        skill: {
+          code: skill.skillCode,
+          name: skill.skillName,
+          overview: `ทักษะ ${skill.skillName}`,
+          note: null,
           levelId: skill.levelId,
-          skillPercent: skill.skillPercent,
-          skill: {
-            code: skill.skillCode,
-            name: skill.skillName,
-            overview: `ทักษะ ${skill.skillName}`, // Provide a default overview
-            note: null,
-            levelId: skill.levelId,
-            categoryId: 0, // Default value, could be improved with actual category mapping
-            category: {
-              id: 0, // Default value
-              name: skill.categoryName,
-              subcategoryId: null,
-            },
-            levels: [], // These would need to be fetched separately if needed
-            subSkills: [], // These would need to be fetched separately if needed
-          },
-          level: {
-            id: skill.levelId,
-            name: skill.levelName,
-            skillCode: skill.skillCode,
-            descriptions: [], // These would need to be fetched separately if needed
-          },
-        };
-      }) || [];
+          categoryId: 0,
+          category: { id: 0, name: skill.categoryName, subcategoryId: null },
+          levels: [],
+          subSkills: [],
+        },
+        level: {
+          id: skill.levelId,
+          name: skill.levelName,
+          skillCode: skill.skillCode,
+          descriptions: [],
+        },
+      })) || [];
 
-    console.log("Converted SFIA skills:", sfiaSkills);
-
-    console.log("Converted SFIA skills:", sfiaSkills);
-
-    // Convert TPQI summary to tpqiCareers format
+    // TPQI Mapping
     const tpqiCareers =
-      portfolioData.tpqiSummary?.careerSummaries?.map((career) => ({
+      data.tpqiSummary?.careerSummaries?.map((career) => ({
         id: career.id,
-        userEmail: portfolioData.userEmail,
+        userId: data.userId,
+        userEmail: data.userEmail,
         careerId: career.careerId,
         levelId: career.levelId,
         careerLevelId: career.careerLevelId,
         skillPercent: career.skillPercent || 0,
         knowledgePercent: career.knowledgePercent || 0,
-        career: {
-          id: career.careerId,
-          name: career.careerName || "อาชีพไม่ระบุ",
-        },
-        careerLevel: {
-          id: career.careerLevelId,
-          careerId: career.careerId,
-          levelId: career.levelId,
-        },
-        level: {
-          id: career.levelId,
-          name: career.levelName || "ระดับไม่ระบุ",
-        },
+        career: { id: career.careerId, name: career.careerName || "อาชีพไม่ระบุ" },
+        careerLevel: { id: career.careerLevelId, careerId: career.careerId, levelId: career.levelId },
+        level: { id: career.levelId, name: career.levelName || "ระดับไม่ระบุ" },
       })) || [];
 
     return {
-      userEmail: portfolioData.userEmail,
+      userId: data.userId,
+      userEmail: data.userEmail,
+      portfolioId: data.portfolioInfo?.id,
+      portfolioName: data.portfolioInfo?.name,
+      portfolioDescription: data.portfolioInfo?.description,
       sfiaSkills,
       tpqiCareers,
-      overallStats: portfolioData.overallStats,
+      overallStats: data.overallStats,
     };
   }
 
   /**
-   * Calculates overall statistics from SFIA and TPQI summaries.
-   *
-   * @param sfiaSummary - SFIA summary data
-   * @param tpqiSummary - TPQI summary data
-   * @returns Overall statistics object
+   * คำนวณ Stats รวม
    */
-  private calculateOverallStats(sfiaSummary: SfiaSummaryStats | null, tpqiSummary: TpqiSummaryStats | null) {
+  private calculateOverallStats(sfia: SfiaSummaryStats | null, tpqi: TpqiSummaryStats | null) {
     return {
-      totalSfiaSkills: sfiaSummary?.totalSkills || 0,
-      totalTpqiCareers: tpqiSummary?.totalCareers || 0,
-      averageSfiaProgress: sfiaSummary?.averagePercent || 0, // Changed from avgSkillPercent to averagePercent
-      averageTpqiSkillProgress: tpqiSummary?.averageSkillPercent || 0,
-      averageTpqiKnowledgeProgress: tpqiSummary?.averageKnowledgePercent || 0,
+      totalSfiaSkills: sfia?.totalSkills || 0,
+      totalTpqiCareers: tpqi?.totalCareers || 0,
+      averageSfiaProgress: sfia?.averagePercent || 0,
+      averageTpqiSkillProgress: tpqi?.averageSkillPercent || 0,
+      averageTpqiKnowledgeProgress: tpqi?.averageKnowledgePercent || 0,
     };
   }
 
-  /**
-   * Validates the service configuration.
-   *
-   * @returns Object containing validation result and potential error message
-   */
-  validateServiceConfig(): {
-    isValid: boolean;
-    error?: string;
-  } {
-    return {
-      isValid: true,
-    };
+  // Helper สำหรับ Hook (Validation)
+  validateServiceConfig() {
+    return { isValid: true };
   }
 
-  /**
-   * Checks if the portfolio has any data.
-   *
-   * @param portfolioData - The portfolio data to check
-   * @returns boolean indicating if portfolio has data
-   */
-  hasPortfolioData(portfolioData: CompletePortfolioData): boolean {
-    return (portfolioData.sfiaSummary?.skillSummaries?.length ?? 0) > 0 || (portfolioData.tpqiSummary?.careerSummaries?.length ?? 0) > 0;
-  }
-
-  /**
-   * Generates recommendations based on portfolio data.
-   *
-   * @param portfolioData - The complete portfolio data
-   * @returns Array of recommendation strings
-   */
+  // Helper สำหรับสร้าง Recommendation (Logic เดิม)
   generateRecommendations(portfolioData: CompletePortfolioData): string[] {
     const recommendations: string[] = [];
 
-    // SFIA recommendations
-    if (portfolioData.sfiaSummary?.averagePercent !== undefined) {
-      if (portfolioData.sfiaSummary.averagePercent < 50) {
-        recommendations.push("ควรเน้นการพัฒนาทักษะ SFIA ให้ถึงระดับความชำนาญขั้นกลาง");
-      }
-      if ((portfolioData.sfiaSummary.totalSkills ?? 0) < 5) {
-        recommendations.push("ขยายพอร์ตโฟลิโอทักษะของคุณโดยการสำรวจและพัฒนาสมรรถนะ SFIA เพิ่มเติม");
-      }
+    // SFIA Recs
+    if (portfolioData.sfiaSummary?.averagePercent && portfolioData.sfiaSummary.averagePercent < 50) {
+      recommendations.push("ควรเน้นการพัฒนาทักษะ SFIA ให้ถึงระดับความชำนาญขั้นกลาง");
     }
 
-    // TPQI recommendations
-    if (portfolioData.tpqiSummary?.averageSkillPercent !== undefined) {
-      const tpqiBalance = this.tpqiService.analyzeSkillKnowledgeBalance(portfolioData.tpqiSummary);
-      if (tpqiBalance.recommendedFocus === "skills") {
-        recommendations.push("ความรู้ของคุณแข็งแกร่งมาก ควรพัฒนาทักษะปฏิบัติเพื่อเสริมความเข้าใจทางทฤษฎี");
-      } else if (tpqiBalance.recommendedFocus === "knowledge") {
-        recommendations.push("ทักษะปฏิบัติของคุณดีมาก ควรเสริมสร้างพื้นฐานความรู้ทางทฤษฎี");
-      }
-    }
-
-    // Overall recommendations
-    if (!portfolioData.sfiaSummary?.skillSummaries?.length && !portfolioData.tpqiSummary?.careerSummaries?.length) {
-      recommendations.push("เริ่มสร้างพอร์ตโฟลิโอวิชาชีพของคุณโดยการทำแบบประเมินทักษะและการประเมินอาชีพ");
+    // TPQI Recs
+    if (portfolioData.tpqiSummary) {
+      // เรียก logic balance จาก tpqiService ได้
+      const balance = this.tpqiService.analyzeSkillKnowledgeBalance(portfolioData.tpqiSummary);
+      if (balance.recommendedFocus === "skills") recommendations.push("ควรเพิ่มทักษะปฏิบัติ");
+      if (balance.recommendedFocus === "knowledge") recommendations.push("ควรเพิ่มความรู้ทฤษฎี");
     }
 
     return recommendations;

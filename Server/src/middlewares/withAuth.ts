@@ -1,7 +1,5 @@
-import { Request, Response, NextFunction } from "express";
+import { RequestHandler } from "express";
 import { authenticate, authorizeRole, authorizeInstance } from "./authMiddleware";
-
-type Handler = (req: Request, res: Response, next: NextFunction) => any;
 
 interface AuthOptions {
   resource?: string;
@@ -9,23 +7,22 @@ interface AuthOptions {
   roles?: string | string[];
 }
 
-export const withAuth = (options: AuthOptions, handler: Handler) => {
-  const middlewares: Handler[] = [authenticate];
+// ใช้ RequestHandler type ของ Express
+export const withAuth = (options: AuthOptions, handler: RequestHandler): RequestHandler[] => {
+  const middlewares: RequestHandler[] = [authenticate];
 
   if (options.roles) {
-    // ถ้ามี roles กำหนดเฉพาะ role-based auth
     middlewares.push(authorizeRole(options.roles));
   } else if (options.resource && options.action) {
-    // ถ้า resource + action กำหนด permission-level auth
-    middlewares.push(async (req: Request, res: Response, next: NextFunction) => {
+    // Wrapper function เพื่อ handle async error ใน middleware
+    const instanceMiddleware: RequestHandler = async (req, res, next) => {
       try {
-        const resource = options.resource!;
-        const action = options.action!;
-        await authorizeInstance(resource, action)(req, res, next);
+        await authorizeInstance(options.resource!, options.action!)(req, res, next);
       } catch (err) {
         next(err);
       }
-    });
+    };
+    middlewares.push(instanceMiddleware);
   }
 
   return [...middlewares, handler];

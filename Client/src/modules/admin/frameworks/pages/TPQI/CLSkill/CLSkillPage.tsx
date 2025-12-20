@@ -149,9 +149,11 @@ export default function CLSkillPage() {
             <p className="mt-1 text-sm text-gray-600">Manage skill mapping for each career level</p>
           </div>
           <div className="flex flex-col gap-3 sm:items-end">
-            <Button size="md" onClick={openAdd} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-              <FiPlus className="w-4 h-4" />
-              Add Career Level Skill
+            <Button size="md" onClick={openAdd}>
+              <div className="flex items-center">
+                <FiPlus className="w-4 h-4" />
+                Add Career Level Skill
+              </div>
             </Button>
             <div className="relative w-full sm:w-80">
               <Input

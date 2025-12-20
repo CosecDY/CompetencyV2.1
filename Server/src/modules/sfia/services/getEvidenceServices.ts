@@ -34,7 +34,7 @@ export interface SkillEvidenceCollection {
  *
  * This function performs a complex database query to fetch evidence data including:
  * - All subskills associated with the specified skill code
- * - Evidence URLs from user's data collection
+ * - Evidence URLs directly linked to the user
  * - Only the most recent evidence per subskill
  * - Complete statistical summary
  *
@@ -45,28 +45,8 @@ export interface SkillEvidenceCollection {
  * @returns {Promise<SkillEvidenceCollection|null>} Complete evidence collection with statistics, or null if skill not found.
  *
  * @throws {Error} If database query fails or parameters are invalid.
- *
- * @example
- * // Retrieve evidence for ADEV skill for a specific user
- * const evidenceData = await getEvidenceBySkillAndUser('ADEV', 'user-123');
- * if (evidenceData) {
- *   console.log(`Found ${evidenceData.totalEvidences} evidence items`);
- *   evidenceData.evidences.forEach(evidence => {
- *     console.log(`SubSkill ${evidence.id}: ${evidence.evidenceUrl}`);
- *   });
- * }
- *
- * @example
- * // Handle case when no evidence is found
- * const result = await getEvidenceBySkillAndUser('INVALID_CODE', 'user-123');
- * if (!result) {
- *   console.log('Skill not found or user has no evidence');
- * }
  */
-export async function getEvidenceBySkillAndUser(
-  skillCode: string,
-  userId: string
-): Promise<SkillEvidenceCollection | null> {
+export async function getEvidenceBySkillAndUser(skillCode: string, userId: string): Promise<SkillEvidenceCollection | null> {
   try {
     // Validate input parameters
     if (!skillCode || !userId) {
@@ -120,15 +100,14 @@ export async function getEvidenceBySkillAndUser(
       };
     }
 
-    // Query evidence data for the collected subskill IDs
+    // [UPDATED] Query evidence data directly using userId
+    // No longer traversing through dataCollection
     const evidenceList = await prismaSfia.subSkill.findMany({
       where: {
         id: { in: subSkillIds },
         informations: {
           some: {
-            dataCollection: {
-              userId: userId,
-            },
+            userId: userId, // Direct check on Information table
           },
         },
       },
@@ -136,9 +115,7 @@ export async function getEvidenceBySkillAndUser(
         id: true,
         informations: {
           where: {
-            dataCollection: {
-              userId: userId,
-            },
+            userId: userId, // Direct check on Information table
           },
           orderBy: {
             createdAt: "desc",
@@ -168,9 +145,7 @@ export async function getEvidenceBySkillAndUser(
     };
   } catch (error) {
     console.error("Error fetching evidence data:", error);
-    throw new Error(
-      `Failed to fetch evidence for skill: ${skillCode} and user: ${userId}`
-    );
+    throw new Error(`Failed to fetch evidence for skill: ${skillCode} and user: ${userId}`);
   }
 }
 
@@ -180,9 +155,6 @@ export async function getEvidenceBySkillAndUser(
  * @deprecated Use getEvidenceBySkillAndUser instead.
  * This function maintains backward compatibility but should be replaced in new code.
  */
-export async function getEvidenceServices(
-  skillCode: string,
-  userId: string
-): Promise<SkillEvidenceCollection | null> {
+export async function getEvidenceServices(skillCode: string, userId: string): Promise<SkillEvidenceCollection | null> {
   return getEvidenceBySkillAndUser(skillCode, userId);
 }

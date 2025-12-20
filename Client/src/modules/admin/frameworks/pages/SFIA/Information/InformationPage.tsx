@@ -70,10 +70,9 @@ export default function InformationPage() {
         accessorKey: "user",
         header: "User",
         cell: ({ row }: { row: { original: Information } }) => {
-          const dc = row.original.dataCollection;
-          const email = dc?.user?.email;
-          const userId = dc?.userId;
-          return email || userId || "—";
+          const userId = row.original.userId;
+
+          return userId || "—";
         },
       },
       {

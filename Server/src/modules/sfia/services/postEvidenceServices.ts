@@ -14,7 +14,7 @@ export interface EvidenceResponse {
   approved: InformationApprovalStatus;
   createdAt: Date;
   subSkillId: number;
-  dataCollectionId: number;
+  userId: string; // [UPDATED] Changed from dataCollectionId to userId
 }
 
 /**
@@ -28,7 +28,7 @@ export interface EvidenceResponse {
 
 /**
  * Creates evidence for a subskill under a user's profile.
- * If no existing data collection is found for the user, a new one is created automatically.
+ * Direct association with userId (DataCollection logic removed).
  *
  * @async
  * @function createSubSkillEvidence
@@ -40,15 +40,13 @@ export interface EvidenceResponse {
  *
  * @example
  * const evidence = await createSubSkillEvidence({
- *   userId: 'user_123',
- *   subSkillId: 42,
- *   evidenceUrl: 'https://github.com/example/project'
+ * userId: 'user_123',
+ * subSkillId: 42,
+ * evidenceUrl: 'https://github.com/example/project'
  * });
  * console.log(evidence.id); // Output: 101
  */
-export async function createSubSkillEvidence(
-  evidenceData: CreateEvidenceRequest
-): Promise<EvidenceResponse> {
+export async function createSubSkillEvidence(evidenceData: CreateEvidenceRequest): Promise<EvidenceResponse> {
   // Validate evidenceUrl
   if (!evidenceData.evidenceUrl || !evidenceData.evidenceUrl.trim()) {
     throw new Error("Evidence URL is required and cannot be empty.");
@@ -63,32 +61,18 @@ export async function createSubSkillEvidence(
 
   // If subSkill does not exist, throw an error
   if (!subSkill) {
-    throw new Error(
-      `SubSkill with ID ${evidenceData.subSkillId} does not exist.`
-    );
+    throw new Error(`SubSkill with ID ${evidenceData.subSkillId} does not exist.`);
   }
 
-  // If subSkill exists, proceed to create the evidence
-  let dataCollection = await prismaSfia.dataCollection.findFirst({
-    where: {
-      userId: evidenceData.userId,
-    },
-  });
+  // [REMOVED] Logic for finding/creating DataCollection is no longer needed.
 
-  // If no data collection exists for the user, create a new one
-  dataCollection ??= await prismaSfia.dataCollection.create({
-    data: {
-      userId: evidenceData.userId,
-    },
-  });
-
-  // Create the evidence record with only evidenceUrl
+  // Create the evidence record directly with userId
   const evidence = await prismaSfia.information.create({
     data: {
       text: null, // Set text to null since we don't want to store it
       evidenceUrl: evidenceData.evidenceUrl.trim(),
       subSkillId: evidenceData.subSkillId,
-      dataCollectionId: dataCollection.id,
+      userId: evidenceData.userId, // [UPDATED] Direct assignment to userId
       approvalStatus: InformationApprovalStatus.NOT_APPROVED,
     },
   });
@@ -100,7 +84,7 @@ export async function createSubSkillEvidence(
     evidenceUrl: evidence.evidenceUrl,
     approved: evidence.approvalStatus,
     createdAt: evidence.createdAt,
-    subSkillId: evidence.subSkillId!,
-    dataCollectionId: evidence.dataCollectionId!,
+    subSkillId: evidence.subSkillId!, // Assuming subSkillId is not null based on logic
+    userId: evidence.userId, // [UPDATED] Return userId instead of dataCollectionId
   };
 }

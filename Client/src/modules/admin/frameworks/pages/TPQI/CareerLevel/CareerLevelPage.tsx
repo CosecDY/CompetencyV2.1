@@ -144,9 +144,11 @@ export default function CareerLevelPage() {
             <p className="mt-1 text-sm text-gray-600">Manage career levels</p>
           </div>
           <div className="flex flex-col gap-3 sm:items-end">
-            <Button size="md" onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-              <FiPlus className="w-4 h-4" />
-              Add Career Level
+            <Button size="md" onClick={openAddModal}>
+              <div className="flex items-center">
+                <FiPlus className="w-4 h-4" />
+                Add Career Level
+              </div>
             </Button>
             <div className="relative w-full sm:w-80">
               <Input

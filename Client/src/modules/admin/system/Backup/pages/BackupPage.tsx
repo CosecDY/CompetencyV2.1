@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { AdminLayout } from "@Layouts/AdminLayout";
-import { BiRefresh, BiDownload } from "react-icons/bi";
-import { FaCheckCircle } from "react-icons/fa";
+import { Card, Button } from "@Components/Admin/ExportComponent";
+import { BiRefresh, BiDownload, BiChevronRight, BiShieldQuarter } from "react-icons/bi";
+import { FaCheckCircle, FaDatabase } from "react-icons/fa";
 import { useAdvancedBackup } from "modules/admin/blackup/hooks/useBackup";
 import { BackupService } from "modules/admin/system/Backup/services/BackupService";
-import "react-loading-skeleton/dist/skeleton.css";
 
 export const BackupPage: React.FC = () => {
-  const { initiateBackup, backupData, isLoading, error, availableDatabases, isFetchingDatabases } = useAdvancedBackup();
-
+  const { initiateBackup, backupData, isLoading, availableDatabases, isFetchingDatabases } = useAdvancedBackup();
   const [currentBackupDb, setCurrentBackupDb] = useState<string | null>(null);
 
   const handleDownload = (filename: string) => {
@@ -30,116 +29,147 @@ export const BackupPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 px-4 md:p-5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Database Backup</h1>
-            <p className="text-gray-500">Back up individual databases or download existing files.</p>
+            <h1 className="text-2xl font-bold text-maintext flex items-center gap-2">
+              <BiShieldQuarter className="text-brand" /> Database Backup
+            </h1>
+            <p className="text-muted mt-1">Manage system snapshots and recovery files.</p>
           </div>
 
-          <div>
-            <button
-              onClick={handleBackupAll}
-              disabled={isLoading || isFetchingDatabases || availableDatabases.length === 0}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
-                ${isLoading || isFetchingDatabases || availableDatabases.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}
-              `}
-            >
-              {isLoading ? (
-                <>
-                  <BiRefresh className="animate-spin text-xl" />
-                  Backing Up All...
-                </>
-              ) : (
-                <>
-                  <BiRefresh className="text-xl" />
-                  Backup All
-                </>
-              )}
-            </button>
-          </div>
+          <Button
+            onClick={handleBackupAll}
+            variant="primary"
+            isLoading={isLoading && currentBackupDb === "all"}
+            disabled={isFetchingDatabases || availableDatabases.length === 0}
+            leftIcon={<BiRefresh />}
+            className="shadow-brand/20 shadow-lg"
+          >
+            Backup All Databases
+          </Button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Available Databases</h2>
-          {isFetchingDatabases ? (
-            <div className="text-center text-gray-400 py-4">
-              <p>Loading available databases...</p>
-            </div>
-          ) : error ? (
-            <p className="text-red-500">{error}</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {availableDatabases.map((dbName) => (
-                <div key={dbName} className="bg-gray-50 border border-gray-200 rounded-lg p-6 shadow-sm flex flex-col items-center justify-center text-center transition-all hover:shadow-lg">
-                  <p className="text-xl font-semibold text-gray-800 mb-2">{dbName}</p>
-                  <button
-                    onClick={() => handleCardClick(dbName)}
-                    disabled={isLoading}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
-                      ${isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}
-                    `}
-                  >
-                    {isLoading && currentBackupDb === dbName ? (
-                      <>
-                        <BiRefresh className="animate-spin text-xl" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <BiRefresh className="text-xl" />
-                        Create Backup
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="p-0 border-none shadow-soft overflow-hidden">
+              <div className="p-5 border-b border-border bg-surface flex items-center justify-between">
+                <h2 className="font-bold text-maintext flex items-center gap-2">
+                  <FaDatabase className="text-brand/70 text-sm" /> Available Databases
+                </h2>
+                <span className="text-xs font-bold px-2 py-1 bg-brand/10 text-brand rounded-full">{availableDatabases.length} Connected</span>
+              </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6">
-          {error && !isFetchingDatabases && (
-            <div className="text-red-500 text-center py-4">
-              <p>Error: {error}</p>
-            </div>
-          )}
-
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-10">
-              <BiRefresh className="animate-spin text-5xl text-blue-500" />
-              <p className="mt-4 text-gray-600">Please wait, the backup process for "{currentBackupDb}" may take a few moments...</p>
-            </div>
-          )}
-
-          {backupData && (
-            <div className="space-y-4">
-              {backupData.map((backupResult, index) => (
-                <div key={index}>
-                  <div className="flex items-center gap-2 text-green-600 font-semibold">
-                    <FaCheckCircle className="text-2xl" /> <p>{backupResult.message}</p>
-                  </div>
-
-                  <ul className="space-y-2 mt-2">
-                    {backupResult.backupFiles.map((filename, fileIndex) => (
-                      <li key={fileIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <p className="font-mono text-sm text-gray-700">{filename}</p>
-                        <button onClick={() => handleDownload(filename)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 transition-colors">
-                          <BiDownload className="text-lg" /> Download
-                        </button>
-                      </li>
+              <div className="p-6">
+                {isFetchingDatabases ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-20 bg-background animate-pulse rounded-xl" />
                     ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {availableDatabases.map((dbName) => (
+                      <div key={dbName} className="group p-4 rounded-xl border border-border bg-background hover:bg-surface hover:shadow-md transition-all flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-surface rounded-lg text-brand shadow-sm">
+                            <FaDatabase />
+                          </div>
+                          <span className="font-bold text-maintext">{dbName}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleCardClick(dbName)}
+                          isLoading={isLoading && currentBackupDb === dbName}
+                          disabled={isLoading && currentBackupDb !== dbName}
+                        >
+                          Backup
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
 
-          {!isLoading && !backupData && !error && !isFetchingDatabases && (
-            <div className="text-center text-gray-400 py-10">
-              <p>Click on a database card to create a backup or "Backup All" to back up all databases.</p>
-            </div>
-          )}
+            <Card className="p-0 border-none shadow-soft overflow-hidden">
+              <div className="p-5 border-b border-border bg-surface">
+                <h2 className="font-bold text-maintext">Backup Activity</h2>
+              </div>
+              <div className="p-6">
+                {isLoading && currentBackupDb !== "all" && (
+                  <div className="flex flex-col items-center py-8">
+                    <BiRefresh className="animate-spin text-4xl text-brand" />
+                    <p className="mt-4 text-muted animate-pulse">Processing backup for {currentBackupDb}...</p>
+                  </div>
+                )}
+
+                {backupData ? (
+                  <div className="space-y-4">
+                    {backupData.map((result, idx) => (
+                      <div key={idx} className="bg-green-50/50 border border-green-100 rounded-xl p-4">
+                        <div className="flex items-center gap-2 text-green-700 font-bold mb-3">
+                          <FaCheckCircle /> {result.message}
+                        </div>
+                        <div className="space-y-2">
+                          {result.backupFiles.map((file, fIdx) => (
+                            <div key={fIdx} className="flex items-center justify-between bg-surface p-3 rounded-lg border border-green-100 shadow-sm">
+                              <span className="font-mono text-xs text-muted truncate max-w-[250px] md:max-w-md">{file}</span>
+                              <Button size="sm" variant="outline" leftIcon={<BiDownload />} onClick={() => handleDownload(file)} className="text-xs">
+                                Download
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !isLoading && (
+                    <div className="text-center py-10">
+                      <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4">
+                        <BiDownload className="text-muted text-2xl" />
+                      </div>
+                      <p className="text-muted text-sm">No recent backup activity. Select a database to begin.</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="p-6 border-none shadow-soft bg-surface">
+              <h3 className="font-bold text-maintext mb-4">Backup Policy</h3>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand mt-1.5 flex-shrink-0" />
+                  <p className="text-xs text-muted leading-relaxed">Automated snapshots are taken every 24 hours at 02:00 AM.</p>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand mt-1.5 flex-shrink-0" />
+                  <p className="text-xs text-muted leading-relaxed">Backups are stored for a maximum of 30 days before rotation.</p>
+                </div>
+                <div className="p-4 bg-brand/5 rounded-xl border border-brand/10 mt-2">
+                  <p className="text-[11px] font-bold text-brand uppercase tracking-wider mb-1">Last System Backup</p>
+                  <p className="text-sm font-bold text-maintext">2 hours ago</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border-none shadow-soft bg-surface">
+              <h3 className="font-bold text-maintext mb-4">Quick Actions</h3>
+              <div className="space-y-2">
+                <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-background transition-colors text-sm text-muted font-medium">
+                  View Logs <BiChevronRight />
+                </button>
+                <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-background transition-colors text-sm text-muted font-medium">
+                  Storage Settings <BiChevronRight />
+                </button>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </AdminLayout>

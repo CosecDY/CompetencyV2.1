@@ -1,18 +1,11 @@
 import { BaseRepository } from "@Utils/BaseRepository";
 import { SFIA } from "@Database/dbManagers";
-import type { Category, DataCollection, Description, Information, Level, Skill, SubSkill, Subcategory, SfiaSummary } from "@prisma/client_sfia";
+import type { Category, Description, Information, Level, Skill, SubSkill, Subcategory, SfiaSummary } from "@prisma/client_sfia";
 import { DatabaseManagement } from "@Utils/databaseUtils";
 
 // Category Repository
 export class CategoryRepo extends BaseRepository<Category, "id"> {
   constructor(manager: DatabaseManagement<any> = SFIA.category, pkField: "id" = "id") {
-    super(manager, pkField);
-  }
-}
-
-// DataCollection Repository
-export class DataCollectionRepo extends BaseRepository<DataCollection, "id"> {
-  constructor(manager: DatabaseManagement<any> = SFIA.dataCollection, pkField: "id" = "id") {
     super(manager, pkField);
   }
 }

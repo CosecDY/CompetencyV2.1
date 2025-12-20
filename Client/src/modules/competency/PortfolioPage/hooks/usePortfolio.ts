@@ -1,51 +1,28 @@
 import { useState, useCallback, useMemo } from "react";
-import { PortfolioService, CompletePortfolioData } from "../services/portfolioService";
-import { PortfolioData } from "modules/competency/PortfolioPage/types/portfolio";
+import { PortfolioService, PortfolioListItem } from "../services/portfolioService";
+import { PortfolioData } from "../types/portfolio";
 
-/**
- * Custom hook for managing portfolio data.
- * Handles fetching, loading states, and error handling for portfolio information.
- */
 export const usePortfolio = () => {
-  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
-  const [completeData, setCompleteData] = useState<CompletePortfolioData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-
-  // Initialize the portfolio service with memoization
-  const portfolioService = useMemo(() => {
-    return new PortfolioService();
-  }, []);
-
-  /**
-   * Fetches portfolio data from the API.
-   * @param userEmail - The user's email address
-   */
-  const fetchPortfolioData = useCallback(
-    async (userEmail: string) => {
+  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+  const [portfolioList, setPortfolioList] = useState<PortfolioListItem[]>([]);
+  const portfolioService = useMemo(() => new PortfolioService(), []);
+  const fetchMasterPortfolio = useCallback(
+    async (userId: string, userEmail: string) => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
-
-        // Validate service configuration
-        const validation = portfolioService.validateServiceConfig();
-        if (!validation.isValid) {
-          throw new Error(validation.error || "Service configuration is invalid");
+        const rawData = await portfolioService.getMasterPortfolioData(userId, userEmail);
+        if (!rawData) {
+          throw new Error("Failed to load master data");
         }
+        const formattedData = portfolioService.convertToPortfolioData(rawData);
 
-        // Fetch complete portfolio data
-        const completePortfolio = await portfolioService.getCompletePortfolioData(userEmail);
-        setCompleteData(completePortfolio);
-
-        // Convert to UI format
-        const uiPortfolio = portfolioService.convertToPortfolioData(completePortfolio);
-        setPortfolioData(uiPortfolio);
-        setLastFetched(new Date());
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch portfolio data";
-        setError(errorMessage);
-        console.error("Error fetching portfolio data:", err);
+        setPortfolioData(formattedData);
+      } catch (err: any) {
+        console.error("fetchMasterPortfolio error:", err);
+        setError(err.message || "Failed to load master data");
       } finally {
         setLoading(false);
       }
@@ -53,58 +30,132 @@ export const usePortfolio = () => {
     [portfolioService]
   );
 
-  /**
-   * Refreshes the portfolio data.
-   * @param userEmail - The user's email address
-   */
-  const refreshPortfolio = useCallback(
-    (userEmail: string) => {
-      return fetchPortfolioData(userEmail);
+  const createPortfolio = useCallback(
+    async (userId: string, name: string, description: string, items: Array<{ sourceType: "SFIA" | "TPQI"; externalId: string }>) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await portfolioService.createPortfolio({
+          userId,
+          name,
+          description,
+          items,
+        });
+
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+
+        return result;
+      } catch (err: any) {
+        console.error("createPortfolio error:", err);
+        setError(err.message || "Failed to create portfolio");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
     },
-    [fetchPortfolioData]
+    [portfolioService]
   );
 
-  /**
-   * Checks if portfolio data exists.
-   */
-  const hasData = portfolioData !== null && (portfolioData.sfiaSkills.length > 0 || portfolioData.tpqiCareers.length > 0);
+  const fetchUserPortfolios = useCallback(
+    async (userId: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const list = await portfolioService.getUserPortfolios(userId);
+        setPortfolioList(list);
+      } catch (err: any) {
+        setError(err.message || "Failed to load portfolios");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [portfolioService]
+  );
 
-  /**
-   * Gets recommendations based on current portfolio data.
-   */
-  const recommendations = completeData ? portfolioService.generateRecommendations(completeData) : [];
+  const fetchPortfolioById = useCallback(
+    async (portfolioId: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await portfolioService.getPortfolioById(portfolioId);
+        if (!data) {
+          throw new Error("Portfolio not found");
+        }
+        setPortfolioData(data);
 
-  /**
-   * Checks if data is stale (older than 5 minutes).
-   */
-  const isDataStale = lastFetched ? new Date().getTime() - lastFetched.getTime() > 5 * 60 * 1000 : true;
+        return data;
+      } catch (err: any) {
+        setError(err.message || "Failed to load portfolio details");
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [portfolioService]
+  );
+
+  const updatePortfolio = useCallback(
+    async (id: string, name: string, description: string, items: any[]) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await portfolioService.updatePortfolio(id, {
+          name,
+          description,
+          items,
+        });
+
+        return result;
+      } catch (err: any) {
+        console.error("Update error:", err);
+        setError(err.response?.data?.message || "แก้ไขไม่สำเร็จ");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [portfolioService]
+  );
+
+  const deletePortfolio = useCallback(
+    async (portfolioId: string) => {
+      setLoading(true);
+      try {
+        const success = await portfolioService.deletePortfolio(portfolioId);
+        if (success) {
+          setPortfolioList((prev) => prev.filter((p) => p.id !== portfolioId));
+        } else {
+          throw new Error("Failed to delete");
+        }
+        return success;
+      } catch (err: any) {
+        setError(err.message);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [portfolioService]
+  );
 
   return {
-    // Data
-    portfolioData,
-    completeData,
-
     // State
     loading,
     error,
-    hasData,
-    lastFetched,
-    isDataStale,
+    portfolioData,
+    portfolioList,
 
     // Actions
-    fetchPortfolioData,
-    refreshPortfolio,
-
-    // Additional features
-    recommendations,
-
-    // Utilities
+    fetchMasterPortfolio,
+    createPortfolio,
+    fetchUserPortfolios,
+    fetchPortfolioById,
+    deletePortfolio,
     clearError: () => setError(null),
-    reset: () => {
-      setPortfolioData(null);
-      setCompleteData(null);
-      setError(null);
-      setLastFetched(null);
-    },
+    updatePortfolio,
+    // Utilities
+    generateRecommendations: portfolioService.generateRecommendations,
   };
 };

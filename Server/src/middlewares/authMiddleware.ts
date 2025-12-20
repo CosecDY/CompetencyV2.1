@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client_competency";
 import { verifyToken } from "@Utils/tokenUtils";
 import { Role } from "./authEnums";
+
 const prisma = new PrismaClient();
 
 export interface AuthenticatedRequest extends Request {
@@ -11,14 +12,16 @@ export interface AuthenticatedRequest extends Request {
     roles: string[];
     permissions: string[];
   };
+  assetInstance?: any;
 }
 
-// ตรวจสอบ token และ attach user
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : req.cookies?.token;
-    if (!token) return res.status(401).json({ message: "Unauthorized: No token provided" });
-
+    const token = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : req.cookies?.accessToken;
+    if (!token) {
+      console.log("No token found in Header or Cookie");
+      return res.status(401).json({ message: "Unauthorized: No token provided" });
+    }
     let payload;
     try {
       payload = verifyToken(token);
@@ -28,47 +31,77 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     const user = await prisma.user.findUnique({
       where: { id: String(payload.userId) },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        sessions: {
+          where: {
+            expiresAt: { gt: new Date() },
+          },
+          take: 1,
+        },
         userRoles: {
-          include: {
+          select: {
             role: {
-              include: {
+              select: {
+                name: true,
                 rolePermissions: {
-                  include: { permission: { include: { asset: true, operation: true } } },
+                  select: {
+                    permission: {
+                      select: {
+                        asset: { select: { tableName: true } },
+                        operation: { select: { name: true } },
+                      },
+                    },
+                  },
                 },
               },
             },
           },
         },
-        sessions: true,
       },
     });
 
     if (!user) return res.status(401).json({ message: "Unauthorized: User not found" });
 
+    // 3. Performance Fix: Debounce Session Update (ลด Write Load)
     if (user.sessions?.length) {
+      const latestSession = user.sessions[0];
       const now = new Date();
-      const latestSession = user.sessions.filter((s) => !s.expiresAt || s.expiresAt > now).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
+      const UPDATE_THRESHOLD = 5 * 60 * 1000;
 
-      if (latestSession) {
-        await prisma.session.update({
-          where: { id: latestSession.id },
-          data: { lastActivityAt: now },
-        });
+      if (latestSession && now.getTime() - new Date(latestSession.updatedAt).getTime() > UPDATE_THRESHOLD) {
+        prisma.session
+          .update({
+            where: { id: latestSession.id },
+            data: { lastActivityAt: now },
+          })
+          .catch((err) => console.error("Session update failed", err));
       }
     }
 
+    // Construct Permissions
     const permissions = user.userRoles.flatMap((ur) => ur.role?.rolePermissions?.map((rp) => `${rp.permission.asset.tableName}:${rp.permission.operation.name}`) || []);
+
+    // Remove duplicates
+    const uniquePermissions = Array.from(new Set(permissions));
+
     const roles = user.userRoles.map((ur) => ur.role?.name).filter(Boolean) as string[];
 
-    (req as AuthenticatedRequest).user = { userId: user.id, email: user.email, roles, permissions };
+    (req as AuthenticatedRequest).user = {
+      userId: user.id,
+      email: user.email,
+      roles,
+      permissions: uniquePermissions,
+    };
+
     next();
   } catch (err) {
-    res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
+    console.error("Auth Error:", err);
+    res.status(401).json({ message: "Unauthorized: Server Error" });
   }
 };
 
-// ตรวจสอบ role เฉพาะบาง role
 export const authorizeRole = (allowedRoles: string | string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
@@ -78,25 +111,15 @@ export const authorizeRole = (allowedRoles: string | string[]) => {
     if (!req.user.roles.some((r) => rolesToCheck.includes(r))) {
       return res.status(403).json({ message: "Forbidden: insufficient role" });
     }
-
     next();
   };
 };
 
-// **Middleware สำหรับบล็อก role "User"**
-export const blockUserRole = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-  if (req.user.roles.includes(Role.User)) {
-    return res.status(403).json({ message: "Forbidden: Users cannot access this resource" });
-  }
-  next();
-};
-
-// ตรวจสอบ permission
 export const authorizePermission = (requiredPermissions: string | string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user) return res.status(401).json({ message: "Unauthorized" });
+    if (user.roles.includes(Role.Admin)) return next();
 
     const required = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
     const hasPermission = required.some((perm) => user.permissions.includes(perm));
@@ -108,33 +131,40 @@ export const authorizePermission = (requiredPermissions: string | string[]) => {
   };
 };
 
-// ตรวจสอบ instance
+// 4. Logic Fix: authorizeInstance
 export const authorizeInstance = (resource: string, action: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as AuthenticatedRequest).user;
+    const authReq = req as AuthenticatedRequest;
+    const user = authReq.user;
     if (!user) return res.status(401).json({ message: "Unauthorized" });
+
     if (user.roles.includes("Admin")) return next();
 
     try {
+      const permissionKey = `${resource}:${action}`;
+      const hasGenericPermission = user.permissions.includes(permissionKey);
+
       const userAssetInstance = await prisma.userAssetInstance.findFirst({
-        where: { userId: user.userId, assetInstance: { asset: { tableName: resource } } },
+        where: {
+          userId: user.userId,
+          assetInstance: {
+            asset: { tableName: resource },
+          },
+        },
         include: { assetInstance: { include: { asset: true } } },
       });
 
       if (!userAssetInstance) {
-        const permissionKey = `${resource}:${action}`;
-        if (!user.permissions.includes(permissionKey)) return res.status(403).json({ message: "Forbidden: insufficient permissions (no instance + no role)" });
-
+        if (!hasGenericPermission) {
+          return res.status(403).json({ message: "Forbidden: No permission for this resource" });
+        }
         return next();
       }
 
-      const instance = userAssetInstance.assetInstance;
-      const permissionKey = `${instance.asset.tableName}:${action}`;
-      if (!user.permissions.includes(permissionKey)) return res.status(403).json({ message: "Forbidden: insufficient permission for this object" });
-
-      (req as any).assetInstance = instance;
+      authReq.assetInstance = userAssetInstance.assetInstance;
       next();
     } catch (err) {
+      console.error(err);
       res.status(500).json({ message: "Internal server error" });
     }
   };

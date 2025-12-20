@@ -77,68 +77,17 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-      screens: {
-        sm: "640px",
-      },
-
       colors: {
-        admin: {
-          primary: "#DC2626", // Red-600 (สีแดงหลัก)
-          hover: "#B91C1C", // Red-700 (เข้มขึ้นตอน Hover)
-          light: "#FEF2F2", // Red-50 (พื้นหลังจางๆ)
+        // ใช้ rgb(...) เพื่อให้ Tailwind ปรับ Opacity ได้ (เช่น bg-primary/50)
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        "primary-hover": "rgb(var(--color-primary-hover) / <alpha-value>)",
 
-          // ⬜ Layout Colors (คงเดิมไว้ เพื่อให้อ่านง่าย)
-          bg: "#F1F5F9",
-          surface: "#FFFFFF",
-          sidebar: "#1E293B",
-
-          // 📏 Borders & Lines
-          border: "#E2E8F0",
-
-          // 📝 Typography
-          text: "#0F172A",
-          muted: "#64748B",
-        },
-
-        // ------------------------------------------------------------------
-        // 👤 COMPETENCY THEME (ยังเหมือนเดิม)
-        // ------------------------------------------------------------------
-        comp: {
-          primary: "#8B5CF6",
-          hover: "#7C3AED",
-          bg: "#FFFFFF",
-        },
-
-        // ------------------------------------------------------------------
-        // 🚦 SHARED STATUS COLORS
-        // ------------------------------------------------------------------
-        danger: {
-          DEFAULT: "#EF4444",
-          hover: "#DC2626",
-          bg: "#FEF2F2",
-        },
-        success: {
-          DEFAULT: "#10B981",
-          bg: "#ECFDF5",
-        },
-        warning: {
-          DEFAULT: "#F59E0B",
-          bg: "#FFFBEB",
-        },
-        info: {
-          DEFAULT: "#3B82F6",
-          bg: "#EFF6FF",
-        },
-      },
-
-      fontFamily: {
-        sans: ["Poppins", "Prompt", "sans-serif"],
-      },
-
-      borderRadius: {
-        lg: "0.5rem",
-        xl: "0.75rem",
-        "2xl": "1rem",
+        // Semantic Colors (ชื่อตามหน้าที่)
+        background: "rgb(var(--color-bg) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        "main-text": "rgb(var(--color-text-main) / <alpha-value>)",
+        muted: "rgb(var(--color-text-muted) / <alpha-value>)",
+        border: "rgb(var(--color-border) / <alpha-value>)",
       },
     },
   },

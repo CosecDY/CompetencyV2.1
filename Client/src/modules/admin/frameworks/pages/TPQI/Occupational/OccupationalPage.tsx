@@ -116,8 +116,10 @@ export default function OccupationalPage() {
       <div className="z-10 flex flex-col mb-3 sm:flex-row sm:justify-between sm:items-start">
         <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">Occupationals</h1>
         <div className="flex flex-col items-end space-y-2">
-          <Button size="md" onClick={openAddModal} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Occupational
+          <Button size="md" onClick={openAddModal}>
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add Occupational
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search occupationals..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />

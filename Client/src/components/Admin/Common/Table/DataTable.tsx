@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from "@tanstack/react-table";
-import { FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiAlertTriangle, FiRefreshCw } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiAlertTriangle, FiRefreshCw, FiDatabase } from "react-icons/fi";
 import Select from "../Select/Select";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+
+const getRandomWidth = () => Math.floor(Math.random() * (90 - 40 + 1) + 40) + "%";
 
 interface DataTableProps<T> {
   fetchPage: (pageIndex: number, pageSize: number) => Promise<{ data: T[]; total: number }>;
@@ -21,10 +23,8 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
   const [cache, setCache] = useState<Record<number, T[]>>({});
   const [errorPages, setErrorPages] = useState<Record<number, string>>({});
   const [totalRows, setTotalRows] = useState(0);
-
   const loadingPagesRef = useRef<Set<number>>(new Set());
 
-  // Reset cache on trigger
   useEffect(() => {
     setCache({});
     setPageIndex(0);
@@ -33,7 +33,6 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
 
   const totalPages = Math.max(Math.ceil(totalRows / pageSize), 1);
 
-  // Sliding window prefetch
   const loadPagesSlidingWindow = useCallback(
     async (startPage: number) => {
       const pagesToLoad: number[] = [];
@@ -46,31 +45,32 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
       pagesToLoad.forEach((idx) => loadingPagesRef.current.add(idx));
 
       try {
-        for (const idx of pagesToLoad) {
-          const result = await fetchPage(idx, pageSize);
-          setCache((prev) => ({ ...prev, [idx]: result.data }));
-          setTotalRows(result.total);
-          setErrorPages((prev) => {
-            const copy = { ...prev };
-            delete copy[idx];
-            return copy;
-          });
-        }
+        await Promise.all(
+          pagesToLoad.map(async (idx) => {
+            try {
+              const result = await fetchPage(idx, pageSize);
+              setCache((prev) => ({ ...prev, [idx]: result.data }));
+              setTotalRows(result.total);
+              setErrorPages((prev) => {
+                const copy = { ...prev };
+                delete copy[idx];
+                return copy;
+              });
+            } catch (err) {
+              const message = err instanceof Error ? err.message : "Error loading data";
+              setErrorPages((prev) => ({ ...prev, [idx]: message }));
+            } finally {
+              loadingPagesRef.current.delete(idx);
+            }
+          })
+        );
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Error loading data";
-        setErrorPages((prev) => {
-          const copy = { ...prev };
-          pagesToLoad.forEach((idx) => (copy[idx] = message));
-          return copy;
-        });
-      } finally {
-        pagesToLoad.forEach((idx) => loadingPagesRef.current.delete(idx));
+        console.error("Critical batch loading error", err);
       }
     },
     [fetchPage, pageSize, initialPrefetchPages, cache, totalPages]
   );
 
-  // Prefetch initial pages
   useEffect(() => {
     loadPagesSlidingWindow(0);
   }, [loadPagesSlidingWindow, resetTrigger]);
@@ -87,7 +87,7 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
       if (next.pageIndex !== pageIndex) {
         setPageIndex(next.pageIndex);
         onPageChange?.(next.pageIndex);
-        loadPagesSlidingWindow(next.pageIndex); // sliding window
+        loadPagesSlidingWindow(next.pageIndex);
       }
       if (next.pageSize !== pageSize) {
         setPageSize(next.pageSize);
@@ -115,155 +115,197 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
       if (right < totalPages - 2) buttons.push("...");
       buttons.push(totalPages - 1);
     }
+
     return buttons.map((b, idx) =>
       typeof b === "number" ? (
         <button
           key={idx}
           onClick={() => table.setPageIndex(b)}
-          className={`px-3 py-2 rounded-lg text-sm font-medium ${b === pageIndex ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-200"} transition-colors`}
+          className={`
+            min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200
+            ${b === pageIndex ? "bg-primary text-white shadow-md shadow-primary-shadow scale-105" : "text-gray-500 hover:bg-primary-light hover:text-primary"}
+          `}
         >
           {b + 1}
         </button>
       ) : (
-        <span key={idx} className="px-2 text-gray-500">
+        <span key={idx} className="px-2 text-gray-400 select-none">
           {b}
         </span>
       )
     );
   };
 
+  const isLoadingCurrentPage = loadingPagesRef.current.has(pageIndex);
+  const isErrorCurrentPage = !!errorPages[pageIndex];
+  const isEmptyData = !isLoadingCurrentPage && !isErrorCurrentPage && table.getRowModel().rows.length === 0;
+
   return (
-    <div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-visible">
-      <div className="overflow-x-auto shadow rounded-t-xl">
-        <table className="min-w-full divide-y divide-gray-200 rounded-t-xl">
-          <thead className="bg-gray-50">
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
-                {hg.headers.map((header) => (
-                  <th key={header.id} className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${header.id === "actions" ? "text-right" : "text-left"}`}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {loadingPagesRef.current.has(pageIndex) ? (
-              Array.from({ length: pageSize }).map((_, rowIdx) => (
-                <tr key={`skeleton-${rowIdx}`} className={rowIdx % 2 === 0 ? "bg-white" : "bg-gray-25"}>
-                  {columns.map((_, colIdx) => (
-                    <td key={colIdx} className="px-6 py-4">
-                      <Skeleton height={16} />
-                    </td>
+    <div className="flex flex-col gap-4 font-sans">
+      <div className="bg-white shadow-soft border border-gray-100 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-white sticky top-0 z-10">
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className={`
+                        px-6 py-5 text-xs font-bold uppercase tracking-wider text-navy opacity-80
+                        ${header.id === "actions" ? "text-right" : "text-left"}
+                      `}
+                      style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
                   ))}
                 </tr>
-              ))
-            ) : errorPages[pageIndex] ? (
-              <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center space-y-4">
-                    <FiAlertTriangle className="w-12 h-12 text-red-500" />
-                    <p className="text-lg font-semibold text-red-600">{errorPages[pageIndex]}</p>
-                    <button onClick={() => loadPagesSlidingWindow(pageIndex)} className="mt-2 inline-flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-3xl hover:bg-red-700">
-                      <FiRefreshCw className="w-4 h-4" />
-                      <span>Retry</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ) : table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center space-y-3 bg-gray-50 p-6 rounded-xl border border-dashed border-gray-200">
-                    <FiAlertTriangle className="w-10 h-10 text-gray-400" />
-                    <p className="text-base font-semibold text-gray-700">No data available</p>
-                    <p className="text-sm text-gray-500">Try adjusting filters or search</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              <>
-                {table.getRowModel().rows.map((row, idx) => (
-                  <tr key={row.id} className={`transition-colors duration-150 hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-25"}`}>
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 overflow-hidden truncate max-w-xs">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              ))}
+            </thead>
+
+            <tbody className="bg-white divide-y divide-gray-50 text-gray-600">
+              {isLoadingCurrentPage ? (
+                // Skeleton
+                Array.from({ length: pageSize }).map((_, rowIdx) => (
+                  <tr key={`skeleton-${rowIdx}`}>
+                    {columns.map((_, colIdx) => (
+                      <td key={colIdx} className="px-6 py-4">
+                        <Skeleton
+                          height={20}
+                          width={getRandomWidth()}
+                          baseColor="#f8fafc" // Slate-50
+                          highlightColor="#e2e8f0" // Slate-200
+                          borderRadius={4}
+                        />
                       </td>
                     ))}
                   </tr>
-                ))}
-
-                {table.getRowModel().rows.length < pageSize &&
-                  Array.from({ length: pageSize - table.getRowModel().rows.length }).map((_, idx) => (
-                    <tr key={`empty-${idx}`} className={(table.getRowModel().rows.length + idx) % 2 === 0 ? "bg-white" : "bg-gray-25"}>
-                      {columns.map((_, colIdx) => (
-                        <td key={colIdx} className="px-6 py-4">
-                          &nbsp;
+                ))
+              ) : isErrorCurrentPage ? (
+                <tr>
+                  <td colSpan={columns.length} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="p-3 bg-status-gold/10 rounded-full">
+                        <FiAlertTriangle className="w-8 h-8 text-status-gold" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-navy font-medium">Failed to load data</p>
+                        <p className="text-sm text-status-gold mt-1">{errorPages[pageIndex]}</p>
+                      </div>
+                      <button
+                        onClick={() => loadPagesSlidingWindow(pageIndex)}
+                        className="mt-2 inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors shadow-sm"
+                      >
+                        <FiRefreshCw className="w-4 h-4" />
+                        <span>Try Again</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : isEmptyData ? (
+                <tr>
+                  <td colSpan={columns.length} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="p-4 bg-status-teal/10 rounded-full">
+                        <FiDatabase className="w-10 h-10 text-status-teal" />
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-navy">No data found</p>
+                        <p className="text-sm text-gray-500 mt-1">No records available.</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                // Data Rows
+                <>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr key={row.id} className="group transition-colors duration-200 hover:bg-primary-light/50">
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 group-hover:text-navy">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
                     </tr>
                   ))}
-              </>
-            )}
-          </tbody>
-        </table>
-      </div>
 
-      <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Show:</label>
-              <Select
-                value={pageSize}
-                onChange={(val) => {
-                  setPageSize(Number(val));
-                  setCache({});
-                  setPageIndex(0);
-                  loadPagesSlidingWindow(0);
-                }}
-                options={pageSizes.map((s) => ({ label: `${s} rows`, value: s }))}
-                className="w-30 px-3 py-1.5 text-sm bg-gray-50 text-gray-600"
-              />
+                  {table.getRowModel().rows.length < pageSize &&
+                    Array.from({ length: pageSize - table.getRowModel().rows.length }).map((_, idx) => (
+                      <tr key={`spacer-${idx}`}>
+                        <td colSpan={columns.length} className="px-6 py-4">
+                          &nbsp;
+                        </td>
+                      </tr>
+                    ))}
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer / Pagination */}
+        <div className="bg-white px-6 py-4 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
+            {/* Rows Per Page */}
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">Rows:</span>
+                <Select
+                  value={pageSize}
+                  onChange={(val) => {
+                    setPageSize(Number(val));
+                    setCache({});
+                    setPageIndex(0);
+                    loadPagesSlidingWindow(0);
+                  }}
+                  options={pageSizes.map((s) => ({ label: `${s}`, value: s }))}
+                  className="w-20 px-2 py-1 text-sm bg-white text-navy rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                />
+              </div>
+
+              <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
+
+              <div className="text-sm text-gray-500">
+                <span className="font-medium text-navy">{totalRows ? startRow : 0}</span>-<span className="font-medium text-navy">{endRow}</span> of{" "}
+                <span className="font-medium text-navy">{totalRows}</span>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              Showing <span className="font-medium text-gray-900">{totalRows ? startRow : 0}</span> to <span className="font-medium text-gray-900">{endRow}</span> of{" "}
-              <span className="font-medium text-gray-900">{totalRows}</span> results
+
+            {/* Pagination Controls */}
+            <div className="flex items-center space-x-1.5">
+              <button
+                onClick={() => table.setPageIndex(0)}
+                disabled={pageIndex === 0 || isLoadingCurrentPage}
+                className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <FiChevronsLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => table.previousPage()}
+                disabled={pageIndex === 0 || isLoadingCurrentPage}
+                className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <FiChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center px-2 space-x-1">{renderPageButtons()}</div>
+
+              <button
+                onClick={() => table.nextPage()}
+                disabled={pageIndex === totalPages - 1 || isLoadingCurrentPage}
+                className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <FiChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => table.setPageIndex(totalPages - 1)}
+                disabled={pageIndex === totalPages - 1 || isLoadingCurrentPage}
+                className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary-light disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <FiChevronsRight className="w-4 h-4" />
+              </button>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-1">
-            <button
-              onClick={() => table.setPageIndex(0)}
-              disabled={pageIndex === 0}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <FiChevronsLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => table.previousPage()}
-              disabled={pageIndex === 0}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <FiChevronLeft className="w-4 h-4" />
-            </button>
-
-            {renderPageButtons()}
-
-            <button
-              onClick={() => table.nextPage()}
-              disabled={pageIndex === totalPages - 1}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <FiChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => table.setPageIndex(totalPages - 1)}
-              disabled={pageIndex === totalPages - 1}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <FiChevronsRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </div>

@@ -74,24 +74,17 @@ model SubSkill {
 }
 
 model Information {
-  id               Int                       @id @default(autoincrement())
-  text             String?                   @db.VarChar(255)
-  subSkillId       Int?
-  dataCollectionId Int?
-  createdAt        DateTime                  @default(now())
-  approvalStatus   InformationApprovalStatus @default(NOT_APPROVED)
-  evidenceUrl      String?                   @db.VarChar(1000)
-  dataCollection   DataCollection?           @relation(fields: [dataCollectionId], references: [id])
-  subSkill         SubSkill?                 @relation(fields: [subSkillId], references: [id])
+  id             Int                       @id @default(autoincrement())
+  text           String?                   @db.VarChar(255)
+  subSkillId     Int?
+  userId         String                    @db.Char(36)
+  createdAt      DateTime                  @default(now())
+  approvalStatus InformationApprovalStatus @default(NOT_APPROVED)
+  evidenceUrl    String?                   @db.VarChar(1000)
+  subSkill       SubSkill?                 @relation(fields: [subSkillId], references: [id])
 
-  @@index([dataCollectionId], map: "Information_dataCollectionId_fkey")
   @@index([subSkillId], map: "Information_subSkillId_fkey")
-}
-
-model DataCollection {
-  id           Int           @id @default(autoincrement())
-  userId       String?       @db.Char(36)
-  informations Information[]
+  @@index([userId])
 }
 
 model SfiaSummary {
@@ -105,16 +98,6 @@ model SfiaSummary {
 
   @@index([levelId], map: "SfiaSummary_levelId_fkey")
   @@index([skillCode], map: "SfiaSummary_skillCode_fkey")
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model SubSkill_backup {
-  id            Int     @default(0)
-  skillCode     String
-  descriptionId Int
-  text          String? @db.Text
-
-  @@ignore
 }
 
 enum InformationApprovalStatus {

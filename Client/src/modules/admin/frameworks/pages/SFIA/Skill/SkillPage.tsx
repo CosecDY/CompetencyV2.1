@@ -159,12 +159,11 @@ export default function SkillPage() {
 
           <div className="flex flex-col gap-3 sm:items-end">
             <div className="flex gap-2">
-              <Button
-                onClick={handleAddSkill}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                <FiPlus className="w-4 h-4" />
-                Add Skill
+              <Button onClick={handleAddSkill}>
+                <div className="flex items-center">
+                  <FiPlus className="w-4 h-4" />
+                  Add Skill
+                </div>
               </Button>
             </div>
 

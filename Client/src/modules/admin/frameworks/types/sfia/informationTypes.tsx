@@ -18,7 +18,7 @@ export interface InformationDataCollection {
 export interface Information {
   id: number;
   subSkillId?: number | null;
-  dataCollectionId?: number | null;
+  userId?: number | null;
   createdAt: string;
   evidenceUrl?: string | null;
   approvalStatus: InformationApprovalStatus | null;

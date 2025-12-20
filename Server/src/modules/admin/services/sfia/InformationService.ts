@@ -3,70 +3,59 @@ import type { Information } from "@prisma/client_sfia";
 import { BaseService } from "@Utils/BaseService";
 
 type GetAllOptions = {
-  userId?: number | string;
+  userId?: string; // ตาม Schema เป็น String (Char 36)
 };
 
 export class InformationService extends BaseService<Information, keyof Information> {
   constructor() {
-    super(new InformationRepo(), ["text", "approval_status"], "id");
+    super(new InformationRepo(), ["text", "approvalStatus"], "id");
   }
 
-  async getAll(
-    search?: string,
-    page?: number,
-    perPage?: number,
-    options?: GetAllOptions
-  ): Promise<{ data: (Information & { dataCollection: { id: number; userId: number | string } | null })[]; total: number }> {
+  async getAll(search?: string, page?: number, perPage?: number, options?: GetAllOptions): Promise<{ data: Information[]; total: number }> {
     const where: any = {};
-
-    // Search on Information fields
     if (search && search.trim()) {
       const q = search.trim();
-      where.OR = [
-        { text: { contains: q, mode: "insensitive" } },
-        { approval_status: { contains: q, mode: "insensitive" } },
-      ];
+      where.OR = [{ text: { contains: q } }, { approvalStatus: { equals: q } }];
     }
 
-    if (options?.userId != null) {
-      where.dataCollection = {
-        userId: options.userId,
-      };
+    if (options?.userId) {
+      where.userId = options.userId;
     }
 
+    // 3. เตรียม Query พื้นฐาน
     const commonQuery: any = {
       where,
       include: {
-        dataCollection: {
-          select: {
-            id: true,
-            userId: true,
+        subSkill: {
+          include: {
+            skill: true,
+            description: true,
           },
         },
       },
-      orderBy: { id: "desc" },
+      orderBy: { createdAt: "desc" },
     };
 
-    // Paginated path
-    if (
-      page !== undefined &&
-      perPage !== undefined &&
-      !isNaN(page as any) &&
-      !isNaN(perPage as any)
-    ) {
-      const data = await this.repo.findMany({
-        ...commonQuery,
-        skip: (page - 1) * perPage,
-        take: perPage,
-      });
+    const isPaginated = page !== undefined && perPage !== undefined;
 
-      const total = await this.repo.manager.count({ where });
-      return { data, total };
+    if (isPaginated) {
+      const skip = (Number(page) - 1) * Number(perPage);
+      const take = Number(perPage);
+
+      const [data, total] = await Promise.all([
+        this.repo.findMany({
+          ...commonQuery,
+          skip,
+          take,
+        }),
+        this.repo.manager.count({ where }),
+      ]);
+
+      return { data: data as any, total };
     }
 
-    // Non-paginated path
-    const data = await this.repo.findMany(commonQuery);
-    const total = await this.repo.manager.count({ where });
-    return { data, total };
+    const [data, total] = await Promise.all([this.repo.findMany(commonQuery), this.repo.manager.count({ where })]);
+
+    return { data: data as any, total };
   }
 }

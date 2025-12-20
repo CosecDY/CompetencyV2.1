@@ -1,5 +1,60 @@
 @import "tailwindcss";
 
+@theme {
+  /* สร้าง class: bg-primary, text-primary, border-primary */
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+
+  /* สร้าง class: bg-brand  */
+  --color-brand: var(--color-primary);
+  --color-brand-hover: var(--color-primary-hover);
+
+  /* สร้าง class สำหรับ Layout */
+  --color-background: var(--color-bg);
+  --color-surface: var(--color-surface);
+
+  /* สร้าง class สำหรับ Typography */
+  --color-main-text: var(--color-text-main);
+  --color-muted: var(--color-text-muted);
+
+  /* สร้าง class: border-border */
+  --color-border: var(--color-border);
+
+  --color-card: var(--color-card);
+
+  /* กำหนด Shadow แบบนุ่มๆ (Soft Shadow) */
+  --shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+@layer base {
+  /* :root {
+    --color-primary: #8b5cf6;
+  } */
+
+  .theme-admin {
+    /* Primary: Orange  */
+    --color-primary: #f29f67;
+    --color-primary-hover: #e08e56;
+
+    /* Layout Colors */
+    --color-bg: #f1f5f9;
+    --color-surface: #f1f5f9;
+    --color-card: #ffffff;
+
+    /* Typography */
+    --color-text-main: #0f172a;
+    --color-text-muted: #64748b;
+
+    /* Borders */
+    --color-border: #e2e8f0;
+  }
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+}
+
 @keyframes backgroundShift {
   0% {
     background-position: 0% 50%;
