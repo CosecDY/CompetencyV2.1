@@ -10,12 +10,7 @@ interface NavigationTabsProps {
   tpqiCareersCount: number;
 }
 
-const NavigationTabs: React.FC<NavigationTabsProps> = ({
-  activeTab,
-  onTabChange,
-  sfiaSkillsCount,
-  tpqiCareersCount,
-}) => {
+const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTabChange, sfiaSkillsCount, tpqiCareersCount }) => {
   const tabs = [
     {
       id: "overview" as TabType,
@@ -51,26 +46,20 @@ const NavigationTabs: React.FC<NavigationTabsProps> = ({
 
   const getIconClassName = (tab: TabType) => {
     const isActive = activeTab === tab;
-    return `h-5 w-5 transition-all duration-300 group-hover:scale-110 ${
-      isActive
-        ? "text-white group-hover:drop-shadow-sm"
-        : "text-slate-500 group-hover:text-slate-700 group-hover:rotate-3"
-    }`;
+    return `h-5 w-5 transition-all duration-300 group-hover:scale-110 ${isActive ? "text-white group-hover:drop-shadow-sm" : "text-slate-500 group-hover:text-slate-700 group-hover:rotate-3"}`;
   };
 
   const getBadgeClassName = (tab: TabType) => {
     const isActive = activeTab === tab;
     return `px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-300 group-hover:scale-105 ${
-      isActive
-        ? "bg-white/20 text-white group-hover:bg-white/30"
-        : "bg-slate-100 text-slate-700 group-hover:bg-slate-200 group-hover:shadow-sm"
+      isActive ? "bg-white/20 text-white group-hover:bg-white/30" : "bg-slate-100 text-slate-700 group-hover:bg-slate-200 group-hover:shadow-sm"
     }`;
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full p-4">
       {/* Header */}
-      <div className="mb-6">
+      <div className="p-2 mb-4">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Portfolio Navigation</h2>
         <p className="text-slate-600">Explore your competencies and career development</p>
       </div>
@@ -81,34 +70,25 @@ const NavigationTabs: React.FC<NavigationTabsProps> = ({
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            
+
             return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={getTabClassName(tab.id)}
-                aria-label={`Switch to ${tab.label} tab`}
-                role="tab"
-                aria-selected={isActive}
-              >
+              <button key={tab.id} onClick={() => onTabChange(tab.id)} className={getTabClassName(tab.id)} aria-label={`Switch to ${tab.label} tab`} role="tab" aria-selected={isActive}>
                 <div className="flex items-center space-x-3 min-w-0 flex-1">
-                  <div className={`flex-shrink-0 p-2 rounded-lg transition-all duration-300 group-hover:scale-110 ${
-                    isActive 
-                      ? "bg-white/20 group-hover:bg-white/30" 
-                      : "bg-slate-100 group-hover:bg-slate-200 group-hover:shadow-md"
-                  }`}>
+                  <div
+                    className={`flex-shrink-0 p-2 rounded-lg transition-all duration-300 group-hover:scale-110 ${
+                      isActive ? "bg-white/20 group-hover:bg-white/30" : "bg-slate-100 group-hover:bg-slate-200 group-hover:shadow-md"
+                    }`}
+                  >
                     <Icon className={getIconClassName(tab.id)} />
                   </div>
-                  
+
                   <div className="flex-1 text-left min-w-0">
-                    <div className={`font-semibold text-sm sm:text-base truncate transition-all duration-300 group-hover:tracking-wide ${
-                      isActive ? "text-white" : "text-slate-700"
-                    }`}>
-                      {tab.label}
-                    </div>
-                    <div className={`text-xs mt-0.5 truncate hidden sm:block transition-all duration-300 group-hover:text-opacity-90 ${
-                      isActive ? "text-white/80" : "text-slate-500 group-hover:text-slate-600"
-                    }`}>
+                    <div className={`font-semibold text-sm sm:text-base truncate transition-all duration-300 group-hover:tracking-wide ${isActive ? "text-white" : "text-slate-700"}`}>{tab.label}</div>
+                    <div
+                      className={`text-xs mt-0.5 truncate hidden sm:block transition-all duration-300 group-hover:text-opacity-90 ${
+                        isActive ? "text-white/80" : "text-slate-500 group-hover:text-slate-600"
+                      }`}
+                    >
                       {tab.description}
                     </div>
                   </div>
@@ -116,9 +96,7 @@ const NavigationTabs: React.FC<NavigationTabsProps> = ({
 
                 {tab.count !== null && (
                   <div className="flex-shrink-0 ml-2">
-                    <span className={getBadgeClassName(tab.id)}>
-                      {tab.count}
-                    </span>
+                    <span className={getBadgeClassName(tab.id)}>{tab.count}</span>
                   </div>
                 )}
 
@@ -138,14 +116,7 @@ const NavigationTabs: React.FC<NavigationTabsProps> = ({
       {/* Progress indicator */}
       <div className="mt-4 flex justify-center space-x-2">
         {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={`h-1 w-8 rounded-full transition-all duration-300 ${
-              activeTab === tab.id
-                ? "bg-slate-600"
-                : "bg-slate-300"
-            }`}
-          />
+          <div key={tab.id} className={`h-1 w-8 rounded-full transition-all duration-300 ${activeTab === tab.id ? "bg-slate-600" : "bg-slate-300"}`} />
         ))}
       </div>
     </div>
