@@ -5,7 +5,19 @@ import AdminGuard from "./guards/AdminGuard";
 import Loading from "@Components/Competency/Loading/Loading";
 
 import { adminRoutes } from "./admin/adminRoutes";
-import { HomePage, ResultsPage, CompetencyDetailPage, ProfilePage, AboutPage, PortfolioPage, CreatePortfolioPage, EditPortfolioPage } from "@Pages/ExportPages";
+import {
+  HomePage,
+  ResultsPage,
+  CompetencyDetailPage,
+  ProfilePage,
+  AboutPage,
+  PortfolioPage,
+  CreatePortfolioPage,
+  EditPortfolioPage,
+  CompetencyPage,
+  EvidenceDetailPage,
+  Login,
+} from "@Pages/ExportPages";
 
 const AppRoutes: React.FC = () => (
   <Suspense fallback={<Loading />}>
@@ -19,7 +31,9 @@ const AppRoutes: React.FC = () => (
       <Route path="/portfolio/create" element={<CreatePortfolioPage />} />
       <Route path="/portfolio/edit/:id" element={<EditPortfolioPage />} />
       <Route path="/about" element={<AboutPage />} />
-      <Route path="portfolio" element={<PortfolioPage />} />
+      <Route path="/portfolio" element={<PortfolioPage />} />
+      <Route path="/search-career" element={<CompetencyPage />} />
+      <Route path="/search-career/detail" element={<EvidenceDetailPage />} />
 
       {/* Protected Routes */}
       <Route>
@@ -33,6 +47,8 @@ const AppRoutes: React.FC = () => (
           }
         />
       </Route>
+
+      <Route path="/login" element={<Login />} />
     </Routes>
   </Suspense>
 );

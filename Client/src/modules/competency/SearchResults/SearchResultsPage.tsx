@@ -1,11 +1,6 @@
 import React, { useCallback, useMemo, useTransition, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  motion,
-  LazyMotion,
-  domAnimation,
-  useReducedMotion,
-} from "framer-motion";
+import { motion, LazyMotion, domAnimation, useReducedMotion } from "framer-motion";
 
 import Layout from "@Layouts/Layout";
 import { SearchHeader, SearchContent } from "./components";
@@ -37,20 +32,12 @@ const ResultsPage: React.FC = () => {
   // HOOKS & STATE MANAGEMENT
   // ============================================================================
 
-  const {
-    query,
-    searchTerm,
-    setSearchTerm,
-    allItems,
-    loading,
-    error,
-    handleSearch,
-  } = useLazyCompetencyResults();
+  const { query, searchTerm, setSearchTerm, allItems, loading, error, handleSearch } = useLazyCompetencyResults();
 
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const [isPending, startTransition] = useTransition();
-  
+
   // Add typing state to show immediate feedback during debounce
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimer, setTypingTimer] = useState<NodeJS.Timeout | null>(null);
@@ -68,12 +55,12 @@ const ResultsPage: React.FC = () => {
     // If there's a search term, show typing indicator
     if (searchTerm && searchTerm.trim().length > 0) {
       setIsTyping(true);
-      
+
       // Set timer to hide typing indicator after debounce delay
       const timer = setTimeout(() => {
         setIsTyping(false);
       }, UI_CONSTANTS.TYPING_DELAY);
-      
+
       setTypingTimer(timer);
     } else {
       setIsTyping(false);
@@ -139,9 +126,7 @@ const ResultsPage: React.FC = () => {
       const targetItem = allItems.find((item) => item.id === itemId);
       const framework = targetItem?.framework;
 
-      console.debug(
-        `Navigating to details for item: ${itemId}, framework: ${framework}`
-      );
+      console.debug(`Navigating to details for item: ${itemId}, framework: ${framework}`);
 
       switch (framework) {
         case "sfia":
@@ -151,9 +136,7 @@ const ResultsPage: React.FC = () => {
           navigate(`${navigationConfig.tpqi}/${itemId}`);
           break;
         default:
-          console.warn(
-            `Unknown framework type: ${framework}, redirecting to home`
-          );
+          console.warn(`Unknown framework type: ${framework}, redirecting to home`);
           navigate(navigationConfig.fallback);
           break;
       }
@@ -202,13 +185,7 @@ const ResultsPage: React.FC = () => {
   return (
     <Layout>
       <LazyMotion features={domAnimation}>
-        <motion.div
-          className="flex-1 pt-24 pb-20 px-4 md:px-6 lg:px-8 bg-gradient-to-b from-teal-50 via-teal-25 to-white"
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-        >
+        <motion.div className="flex-1 pt-24 pb-20 px-4 md:px-6 lg:px-8 bg-gradient-to-b from-teal-50 via-teal-25 to-white" variants={pageVariants} initial="initial" animate="animate" exit="exit">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{
@@ -221,19 +198,11 @@ const ResultsPage: React.FC = () => {
               },
             }}
           >
-            <SearchHeader
-              searchTerm={searchTerm}
-              onSearchTermChange={setSearchTerm}
-              onSearch={handleSearchExecution}
-              placeholder={UI_CONSTANTS.SEARCH_PLACEHOLDER}
-              query={query}
-            />
+            <SearchHeader searchTerm={searchTerm} onSearchTermChange={setSearchTerm} onSearch={handleSearchExecution} placeholder={UI_CONSTANTS.SEARCH_PLACEHOLDER} query={query} />
           </motion.div>
 
           <motion.div
-            className={`max-w-6xl mx-auto transition-opacity duration-200 ${
-              isPending ? "opacity-70" : "opacity-100"
-            }`}
+            className={`max-w-6xl mx-auto transition-opacity duration-200 ${isPending ? "opacity-70" : "opacity-100"}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{
               opacity: isPending ? 0.7 : 1,

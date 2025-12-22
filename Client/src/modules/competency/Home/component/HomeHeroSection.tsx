@@ -1,8 +1,7 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Award, Layers, Globe } from "lucide-react";
-import SearchBox from "@Components/Competency/SearchBox";
+import { ChevronDown, Award, Globe, Search } from "lucide-react";
 
 /** Animation variants for Framer Motion */
 const fadeInUp = {
@@ -34,10 +33,6 @@ const frameworkCardVariants = {
   },
 };
 
-/**
- * Data for framework showcase cards.
- * Each object represents a framework and its display properties.
- */
 const frameworkFeatures = [
   {
     framework: "SFIA",
@@ -61,11 +56,6 @@ const frameworkFeatures = [
   },
 ];
 
-/**
- * Renders a single framework showcase card with animation.
- * @param framework - Framework data object
- * @param index - Index of the card for animation delay
- */
 function FrameworkCard({
   framework,
   index,
@@ -78,17 +68,12 @@ function FrameworkCard({
       variants={frameworkCardVariants}
       className={`relative ${framework.bgColor} backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-500 ${framework.borderColor} border-2 group hover:scale-105`}
     >
-      {/* Framework Icon */}
       <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r ${framework.color} rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
         <framework.icon className="w-6 h-6 text-white" />
       </div>
-      {/* Framework Badge */}
       <div className={`inline-block bg-gradient-to-r ${framework.color} text-white text-sm font-bold px-3 py-1 rounded-full mb-3`}>{framework.framework}</div>
-      {/* Framework Title */}
       <h3 className="text-lg font-bold text-gray-800 mb-2">{framework.title}</h3>
-      {/* Framework Description */}
       <p className="text-gray-600 text-sm mb-4">{framework.description}</p>
-      {/* Framework Features List */}
       <div className="space-y-2">
         {framework.features.map((feature, featureIndex) => (
           <motion.div
@@ -105,89 +90,103 @@ function FrameworkCard({
           </motion.div>
         ))}
       </div>
-      {/* Decorative corner element */}
-      <div className={`absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br ${framework.color} rounded-full opacity-20 group-hover:opacity-30 transition-opacity duration-300`} />
     </motion.div>
   );
 }
 
-/**
- * HomeHeroSection
- *
- * Renders the hero section for the Home page, including:
- * - Animated title and subtitle
- * - Search box for competencies
- * - Animated framework showcase cards (SFIA & TPQI)
- * - Scroll indicator to new features section
- */
 export const HomeHeroSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
-  /**
-   * Handles search action from the search box.
-   * Navigates to the results page with the search query.
-   */
   const handleSearch = useCallback(
     (term: string) => {
       if (term.trim() !== "") {
-        navigate(`/results?query=${encodeURIComponent(term.trim())}`);
+        navigate(`/search-career?q=${encodeURIComponent(term.trim())}`);
       }
     },
     [navigate]
   );
 
-  /**
-   * Scrolls smoothly to the "What's New" features section.
-   */
-  const scrollToNewFeatures = useCallback(() => {
-    document.getElementById("version-2-features")?.scrollIntoView({
+  const scrollToUsageGuide = useCallback(() => {
+    document.getElementById("usage-guide")?.scrollIntoView({
       behavior: "smooth",
       block: "start",
     });
   }, []);
 
   return (
-    <section id="home-hero" className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-16 overflow-hidden">
-      <div className="relative z-10 text-center px-6 max-w-6xl mx-auto flex-1 flex flex-col justify-center">
+    <section id="home-hero" className="relative min-h-screen flex flex-col items-center justify-center pb-16 overflow-hidden">
+      <div className="relative z-10 text-center px-6 max-w-6xl mx-auto flex-1 flex flex-col justify-center w-full">
         {/* Animated Title */}
         <motion.h1
           variants={fadeInUp}
           initial="initial"
           animate="animate"
           transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-teal-600 to-teal-800 bg-clip-text text-transparent pb-6"
+          className="text-4xl md:text-7xl font-bold text-slate-800 pb-6 flex flex-col md:block items-center justify-center gap-2"
         >
-          Competency Database
+          <span>ค้นหาอาชีพและทักษะ</span>
+          <span className="bg-gradient-to-r from-teal-600 to-teal-800 bg-clip-text text-transparent relative inline-block">สมรรถนะ</span>
         </motion.h1>
+
         {/* Animated Subtitle */}
         <motion.p
           variants={fadeInUp}
           initial="initial"
           animate="animate"
           transition={{ duration: 0.6, ease: "easeInOut", delay: 0.2 }}
-          className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed font-medium"
+          className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed font-medium max-w-3xl mx-auto"
         >
-          ค้นหาและเปรียบเทียบกรอบสมรรถนะ SFIA & TPQI อย่างมีประสิทธิภาพ
+          ฐานข้อมูลมาตรฐานสมรรถนะบุคลากร (Competency Database) <br className="hidden md:block" />
+          ครอบคลุมมาตรฐานสากล <span className="font-bold text-blue-600">SFIA</span> และ <span className="font-bold text-emerald-600">TPQI</span>
         </motion.p>
-        {/* Search Box */}
-        <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ duration: 0.6, ease: "easeInOut", delay: 0.4 }} className="relative flex justify-center">
-          <SearchBox searchTerm={searchTerm} onSearchTermChange={setSearchTerm} onSearch={handleSearch} placeholder="ค้นหาสมรรถนะ..." variant="hero" />
+
+        {/* --- PREMIUM SEARCH BOX --- */}
+        <motion.div variants={fadeInUp} initial="initial" animate="animate" transition={{ duration: 0.6, ease: "easeInOut", delay: 0.4 }} className="relative w-full max-w-3xl mx-auto">
+          <div className="relative group z-20">
+            {/* Glow Effect Background */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 via-blue-500 to-teal-400 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-gradient-xy"></div>
+
+            {/* Input Container */}
+            <div className="relative bg-white rounded-full shadow-xl flex items-center p-2 border border-slate-200 transition-transform duration-300 focus-within:scale-[1.02]">
+              {/* Search Icon */}
+              <div className="pl-6 pr-4 text-slate-400 group-focus-within:text-teal-500 transition-colors">
+                <Search className="w-7 h-7" />
+              </div>
+
+              {/* Input Field */}
+              <input
+                type="text"
+                className="flex-1 w-full py-4 text-xl text-slate-700 bg-transparent outline-none placeholder:text-slate-400 font-medium"
+                placeholder="ค้นหาอาชีพ (เช่น System Analyst) หรือทักษะ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch(searchTerm)}
+              />
+
+              {/* Search Button */}
+              <button
+                onClick={() => handleSearch(searchTerm)}
+                className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white text-lg font-bold px-8 py-3.5 rounded-full transition-all shadow-lg hover:shadow-teal-500/30 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+              >
+                <span>ค้นหา</span>
+              </button>
+            </div>
+          </div>
         </motion.div>
+
         {/* Framework Showcase Cards */}
-        <motion.div initial="hidden" animate="visible" variants={containerVariants} className="mt-16 grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <motion.div initial="hidden" animate="visible" variants={containerVariants} className="mt-20 grid md:grid-cols-2 gap-8 max-w-5xl mx-auto w-full">
           {frameworkFeatures.map((framework, index) => (
             <FrameworkCard key={framework.framework} framework={framework} index={index} />
           ))}
         </motion.div>
       </div>
+
       {/* Scroll Indicator */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 1.4 }} className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <button onClick={scrollToNewFeatures} className="flex flex-col items-center text-teal-600 hover:text-teal-700 transition-colors group" aria-label="Scroll to see what's new">
-          <span className="text-sm font-medium mb-2 flex items-center gap-2">
-            <Layers className="w-4 h-4" />
-            What's New in Version 2
-          </span>
+        <button onClick={scrollToUsageGuide} className="flex flex-col items-center text-teal-600/70 hover:text-teal-700 transition-colors group" aria-label="Scroll to usage guide">
+          <span className="text-sm font-medium mb-2">วิธีการใช้งาน</span>
           <motion.div animate={{ y: [0, 5, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
             <ChevronDown className="w-6 h-6 group-hover:scale-110 transition-transform" />
           </motion.div>

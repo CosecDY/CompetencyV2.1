@@ -81,7 +81,7 @@ const ProfilePage = () => {
   return (
     <Layout>
       <WhiteTealBackground>
-        <div className="container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 pb-24">
           {/* Auth and Loading States */}
           <AuthStates isAuthLoading={!!auth?.loading} isAuthenticated={!!auth?.user} isProfileLoading={loading} error={error} onRetry={() => loadProfile().catch(console.error)} />
 

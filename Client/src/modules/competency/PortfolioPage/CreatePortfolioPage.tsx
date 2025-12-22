@@ -66,7 +66,7 @@ const CreatePortfolioPage: React.FC = () => {
               <button onClick={() => navigate("/portfolio")} className="p-2 hover:bg-gray-100 rounded-full transition text-gray-500">
                 <i className="fas fa-arrow-left text-xl"></i>
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">✨ สร้าง Portfolio ใหม่</h1>
+              <h1 className="text-2xl font-bold text-gray-800">สร้าง Portfolio ใหม่</h1>
             </div>
 
             <form onSubmit={handleCreate} className="grid grid-cols-1 lg:grid-cols-3 gap-6">

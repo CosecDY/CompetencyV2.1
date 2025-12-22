@@ -8,7 +8,8 @@ export const useNavigation = (isLoggedIn: boolean, role?: string) => {
   const NAV_ITEMS: NavItem[] = useMemo(() => {
     const baseItems: NavItem[] = [
       { name: "Home", path: "/home" },
-      { name: "Search", path: "/results" },
+      { name: "Competency", path: "/results" },
+      { name: "Career", path: "/search-career" },
       { name: "About", path: "/about" },
     ];
 

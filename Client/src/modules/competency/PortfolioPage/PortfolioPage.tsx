@@ -46,7 +46,7 @@ const PortfolioDashboardPage: React.FC = () => {
 
   // --- HANDLERS ---
   const openDeleteModal = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // กันไม่ให้ไปเปิดหน้า Detail
+    e.stopPropagation();
     setIdToDelete(id);
     setIsDeleteModalOpen(true);
   };

@@ -6,10 +6,7 @@ interface MobileMenuToggleProps {
   onToggle: () => void;
 }
 
-const MobileMenuToggle: React.FC<MobileMenuToggleProps> = ({
-  menuOpen,
-  onToggle,
-}) => {
+const MobileMenuToggle: React.FC<MobileMenuToggleProps> = ({ menuOpen, onToggle }) => {
   return (
     <button
       onClick={onToggle}
@@ -19,11 +16,7 @@ const MobileMenuToggle: React.FC<MobileMenuToggleProps> = ({
       aria-label="Toggle menu"
       aria-expanded={menuOpen}
     >
-      {menuOpen ? (
-        <FaTimes className="h-5 w-5" />
-      ) : (
-        <FaBars className="h-5 w-5" />
-      )}
+      {menuOpen ? <FaTimes className="h-5 w-5" /> : <FaBars className="h-5 w-5" />}
     </button>
   );
 };

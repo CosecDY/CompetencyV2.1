@@ -8,9 +8,7 @@ const Logo: React.FC = () => {
         <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
           <span className="text-white font-bold text-lg">C</span>
         </div>
-        <span className="text-2xl font-bold text-gray-900">
-          ompetency
-        </span>
+        <span className="text-2xl font-bold text-gray-900">ompetency</span>
       </Link>
     </div>
   );

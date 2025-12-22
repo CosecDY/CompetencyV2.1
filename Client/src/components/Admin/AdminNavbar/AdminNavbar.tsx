@@ -1,8 +1,7 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { FiMenu, FiHome } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import AuthContext from "@Contexts/AuthContext";
-import Login from "@Components/Competency/Navbar/Login";
 import ProfileDisplay from "@Components/Competency/Navbar/ProfileDisplay";
 
 interface AdminNavbarProps {
@@ -12,10 +11,8 @@ interface AdminNavbarProps {
 
 const AdminNavbar: React.FC<AdminNavbarProps> = ({ onToggleSidebar }) => {
   const auth = useContext(AuthContext);
-  const { user, loading, login } = auth!;
+  const { user, loading } = auth!;
   const isLoggedIn = !!user;
-  const [loginOpen, setLoginOpen] = useState(false);
-
   return (
     <header className="fixed top-0 left-0 z-40 right-0 h-16 bg-surface border-border flex items-center px-4 md:px-6 transition-all duration-200 ">
       {/* Logo Section */}
@@ -56,19 +53,9 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onToggleSidebar }) => {
         ) : isLoggedIn ? (
           <ProfileDisplay profile={user} onLogout={async () => await auth?.logout()} />
         ) : (
-          <>
-            <button onClick={() => setLoginOpen(true)} className="flex items-center space-x-1 bg-primary text-white text-sm font-bold px-4 py-2 rounded-full hover:bg-primary-hover transition ">
-              Login
-            </button>
-            <Login
-              open={loginOpen}
-              onClose={() => setLoginOpen(false)}
-              handleLogin={async (resp) => {
-                await login(resp.credential!);
-                setLoginOpen(false);
-              }}
-            />
-          </>
+          <Link to="/login" className="flex items-center space-x-1 bg-primary text-white text-sm font-bold px-4 py-2 rounded-full hover:bg-primary-hover transition">
+            Login
+          </Link>
         )}
       </div>
     </header>

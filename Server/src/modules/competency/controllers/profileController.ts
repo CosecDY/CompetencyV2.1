@@ -13,11 +13,7 @@ interface AuthenticatedRequest extends Request {
 /**
  * Controller to get current user's profile data.
  */
-export const getUserProfileController = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const getUserProfileController = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     // Validate user authentication
     if (!req.user?.userId) {
@@ -46,10 +42,7 @@ export const getUserProfileController = async (
     console.error("Error in getUserProfileController:", error);
 
     // Handle record not found errors
-    if (
-      error.code === "P2025" ||
-      error.message?.includes("Record to read does not exist")
-    ) {
+    if (error.code === "P2025" || error.message?.includes("Record to read does not exist")) {
       res.status(404).json({
         success: false,
         message: "User profile not found.",
@@ -68,11 +61,7 @@ export const getUserProfileController = async (
 /**
  * Controller to update current user's profile data.
  */
-export const updateUserProfileController = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const updateUserProfileController = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     // Validate user authentication
     if (!req.user?.userId) {
@@ -83,29 +72,13 @@ export const updateUserProfileController = async (
       return;
     }
 
-    const {
-      firstNameTH,
-      lastNameTH,
-      firstNameEN,
-      lastNameEN,
-      phone,
-      line,
-      address,
-    } = req.body;
+    const { firstNameTH, lastNameTH, firstNameEN, lastNameEN, phone, line, address } = req.body;
 
     // Validate required fields
-    if (
-      !firstNameTH ||
-      !lastNameTH ||
-      !firstNameEN ||
-      !lastNameEN ||
-      !phone ||
-      !address
-    ) {
+    if (!firstNameTH || !lastNameTH || !firstNameEN || !lastNameEN || !phone || !address) {
       res.status(400).json({
         success: false,
-        message:
-          "Missing required fields: firstNameTH, lastNameTH, firstNameEN, lastNameEN, phone, address",
+        message: "Missing required fields: firstNameTH, lastNameTH, firstNameEN, lastNameEN, phone, address",
       });
       return;
     }
@@ -214,10 +187,7 @@ export const updateUserProfileController = async (
     }
 
     // Handle record not found errors
-    if (
-      error.code === "P2025" ||
-      error.message?.includes("Record to update does not exist")
-    ) {
+    if (error.code === "P2025" || error.message?.includes("Record to update does not exist")) {
       res.status(404).json({
         success: false,
         message: "User profile not found.",
@@ -245,11 +215,7 @@ export const updateUserProfileController = async (
 /**
  * Controller to get basic user info (for avatar/display purposes).
  */
-export const getUserBasicInfoController = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const getUserBasicInfoController = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     // Validate user authentication
     if (!req.user?.userId) {
@@ -278,10 +244,7 @@ export const getUserBasicInfoController = async (
     console.error("Error in getUserBasicInfoController:", error);
 
     // Handle record not found errors
-    if (
-      error.code === "P2025" ||
-      error.message?.includes("Record to read does not exist")
-    ) {
+    if (error.code === "P2025" || error.message?.includes("Record to read does not exist")) {
       res.status(404).json({
         success: false,
         message: "User not found.",
