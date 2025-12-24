@@ -77,6 +77,30 @@ CREATE DATABASE tpqi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ---
 
+## Missing Competency Data (Seed Assets)
+
+In some cases, the **Competency data may be empty or incomplete**, for example:
+
+- First-time system setup
+- Database was recreated
+- Data migration or reset was performed
+- Competency-related pages show no data
+
+When this happens, you must manually seed the required **static competency assets**
+into the database.
+
+The project provides a dedicated script for seeding competency assets:
+
+### Seed Script
+
+```
+
+npm run seed-assets
+
+```
+
+---
+
 ### Step 2: Environment Configuration
 
 The project is divided into two environments:
