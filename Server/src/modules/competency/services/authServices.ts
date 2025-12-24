@@ -4,6 +4,7 @@ import { OAuth2Client } from "google-auth-library";
 import { SessionService } from "@/modules/admin/services/rbac/sessionService";
 
 const prisma = new PrismaClient();
+
 const sessionService = new SessionService();
 const DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE || "User";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -13,29 +14,25 @@ if (!GOOGLE_CLIENT_ID) throw new Error("Missing GOOGLE_CLIENT_ID env variable");
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const getRefreshTokenExpiry = () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-// Use Prisma Helper for safer typing
-type UserWithRoles = Prisma.UserGetPayload<{
-  include: {
-    userRoles: {
-      include: {
-        role: {
-          include: { rolePermissions: { include: { permission: true } } };
-        };
-      };
-    };
-  };
-}>;
+// Define Transaction Client Type
+type TxClient = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
 class AuthService {
   async loginWithGoogle(googleToken: string) {
     if (!googleToken) throw new Error("Google token is required");
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: googleToken,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    if (!payload?.email) throw new Error("Invalid Google token");
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: googleToken,
+        audience: GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (error) {
+      throw new Error("Invalid Google Token");
+    }
+
+    if (!payload?.email) throw new Error("Invalid Google token payload");
 
     const email = payload.email!;
     const firstNameEN = payload.given_name ?? "";
@@ -51,10 +48,10 @@ class AuthService {
       if (!user) {
         let defaultRole = await tx.role.findUnique({ where: { name: DEFAULT_USER_ROLE } });
 
-        // Auto-create role if missing (Robustness)
         if (!defaultRole) {
-          console.warn(`Role '${DEFAULT_USER_ROLE}' not found. Creating automatically.`);
-          defaultRole = await tx.role.create({ data: { name: DEFAULT_USER_ROLE, description: "Default User Role" } });
+          defaultRole = await tx.role.create({
+            data: { name: DEFAULT_USER_ROLE, description: "Default User Role" },
+          });
         }
 
         user = await tx.user.create({
@@ -81,8 +78,16 @@ class AuthService {
       const refreshToken = generateRefreshToken({ userId: user.id });
       const csrfToken = generateCsrfToken();
 
-      // 4. Create Session (Upsert might not be best if allowing multiple devices, Create is safer for new login)
-      await sessionService.upsertSession(user.id, accessToken, refreshToken, csrfToken, "google", expiresAt);
+      await tx.session.create({
+        data: {
+          userId: user.id,
+          accessToken,
+          refreshToken,
+          csrfToken,
+          provider: "google",
+          expiresAt,
+        },
+      });
 
       return {
         user: {
@@ -103,28 +108,33 @@ class AuthService {
     return result;
   }
 
-  async logout(refreshToken: string, txClient?: PrismaClient) {
-    if (!refreshToken) return; // Idempotent: if no token, do nothing
+  async logout(refreshToken: string, txClient?: TxClient) {
+    if (!refreshToken) return;
     const client = txClient ?? prisma;
     await client.session.deleteMany({ where: { refreshToken } });
   }
 
-  async refreshToken(oldRefreshToken: string, txClient?: PrismaClient) {
+  async refreshToken(oldRefreshToken: string, txClient?: TxClient) {
     if (!oldRefreshToken) throw new Error("Refresh token required");
     const client = txClient ?? prisma;
 
-    const payload = verifyRefreshToken(oldRefreshToken);
+    let payload;
+    try {
+      payload = verifyRefreshToken(oldRefreshToken);
+    } catch (e) {
+      throw new Error("Invalid Refresh Token format");
+    }
 
-    // [CRITICAL FIX] Verify the SPECIFIC session, not just any session for this user
+    // Verify Session existence matches Token AND User
     const storedSession = await client.session.findFirst({
       where: {
-        refreshToken: oldRefreshToken, // Must match the token
+        refreshToken: oldRefreshToken,
         userId: payload.userId,
       },
     });
 
     if (!storedSession) {
-      // Token Reuse Detection Logic could go here (Security Alert)
+      // Possible Token Reuse Attack -> Could invalidate all user sessions here for security
       throw new Error("Invalid or expired refresh token");
     }
 
@@ -141,7 +151,7 @@ class AuthService {
     const csrfToken = generateCsrfToken();
     const expiresAt = getRefreshTokenExpiry();
 
-    // Rotate Token: Update the EXISTING session with new tokens
+    // Rotate Token: Update EXISTING session
     await client.session.update({
       where: { id: storedSession.id },
       data: {
@@ -161,7 +171,7 @@ class AuthService {
     };
   }
 
-  async getCurrentUser(userId: string, txClient?: PrismaClient) {
+  async getCurrentUser(userId: string, txClient?: TxClient) {
     if (!userId) throw new Error("User ID required");
     const client = txClient ?? prisma;
 
@@ -171,7 +181,18 @@ class AuthService {
         userRoles: {
           include: {
             role: {
-              include: { rolePermissions: { include: { permission: true } } },
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: {
+                      include: {
+                        operation: true,
+                        asset: true,
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -180,8 +201,20 @@ class AuthService {
 
     if (!userWithRoles) throw new Error("User not found");
 
+    // Flatten permissions safely
     // Safe extraction
-    const permissions = userWithRoles.userRoles.flatMap((ur) => ur.role.rolePermissions?.map((rp) => rp.permission.id.toString()) ?? []);
+    const permissions = Array.from(
+      new Set(
+        userWithRoles.userRoles.flatMap(
+          (ur) =>
+            ur.role.rolePermissions?.map((rp) => {
+              const op = rp.permission.operation?.name || "unknown";
+              const asset = rp.permission.asset?.tableName || "unknown";
+              return `${op}:${asset}`;
+            }) ?? []
+        )
+      )
+    );
     const primaryRole = userWithRoles.userRoles[0]?.role.name ?? DEFAULT_USER_ROLE;
 
     return {

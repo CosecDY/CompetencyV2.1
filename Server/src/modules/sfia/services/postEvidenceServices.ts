@@ -4,7 +4,7 @@ import { InformationApprovalStatus } from "@prisma/client_sfia";
 export interface CreateEvidenceRequest {
   userId: string;
   subSkillId: number;
-  evidenceUrl: string; // Make this required, remove evidenceText
+  evidenceUrl: string;
 }
 
 export interface EvidenceResponse {
@@ -14,7 +14,7 @@ export interface EvidenceResponse {
   approved: InformationApprovalStatus;
   createdAt: Date;
   subSkillId: number;
-  userId: string; // [UPDATED] Changed from dataCollectionId to userId
+  userId: string;
 }
 
 /**
@@ -28,7 +28,6 @@ export interface EvidenceResponse {
 
 /**
  * Creates evidence for a subskill under a user's profile.
- * Direct association with userId (DataCollection logic removed).
  *
  * @async
  * @function createSubSkillEvidence
@@ -64,15 +63,13 @@ export async function createSubSkillEvidence(evidenceData: CreateEvidenceRequest
     throw new Error(`SubSkill with ID ${evidenceData.subSkillId} does not exist.`);
   }
 
-  // [REMOVED] Logic for finding/creating DataCollection is no longer needed.
-
   // Create the evidence record directly with userId
   const evidence = await prismaSfia.information.create({
     data: {
       text: null, // Set text to null since we don't want to store it
       evidenceUrl: evidenceData.evidenceUrl.trim(),
       subSkillId: evidenceData.subSkillId,
-      userId: evidenceData.userId, // [UPDATED] Direct assignment to userId
+      userId: evidenceData.userId,
       approvalStatus: InformationApprovalStatus.NOT_APPROVED,
     },
   });
@@ -84,7 +81,7 @@ export async function createSubSkillEvidence(evidenceData: CreateEvidenceRequest
     evidenceUrl: evidence.evidenceUrl,
     approved: evidence.approvalStatus,
     createdAt: evidence.createdAt,
-    subSkillId: evidence.subSkillId!, // Assuming subSkillId is not null based on logic
-    userId: evidence.userId, // [UPDATED] Return userId instead of dataCollectionId
+    subSkillId: evidence.subSkillId!,
+    userId: evidence.userId,
   };
 }

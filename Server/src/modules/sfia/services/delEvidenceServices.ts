@@ -16,7 +16,7 @@ export interface DeleteEvidenceResult {
   id: number;
   text: string | null;
   subSkillId: number | null;
-  userId: string; // [UPDATED] Replaced dataCollectionId with userId
+  userId: string;
   evidenceUrl: string | null;
   createdAt: Date;
   approvalStatus: string;

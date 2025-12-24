@@ -53,9 +53,9 @@ export const loginWithGoogle = async (req: Request, res: Response) => {
     const { user, accessToken, refreshToken, csrfToken } = await AuthService.loginWithGoogle(idToken);
 
     // Clear old cookies first
-    res.clearCookie("refreshToken", { path: "/" });
-    res.clearCookie("accessToken", { path: "/" });
-    res.clearCookie("csrfToken", { path: "/" });
+    res.clearCookie("refreshToken", BASE_COOKIE_OPTIONS);
+    res.clearCookie("accessToken", BASE_COOKIE_OPTIONS);
+    res.clearCookie("csrfToken", BASE_COOKIE_OPTIONS);
 
     // Set new cookies
     res.cookie("refreshToken", refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
@@ -79,9 +79,9 @@ export const logout = async (req: AuthenticatedRequest, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
 
   // Clear Cookies regardless of server status
-  res.clearCookie("refreshToken", { path: "/" });
-  res.clearCookie("accessToken", { path: "/" });
-  res.clearCookie("csrfToken", { path: "/" });
+  res.clearCookie("refreshToken", BASE_COOKIE_OPTIONS);
+  res.clearCookie("accessToken", BASE_COOKIE_OPTIONS);
+  res.clearCookie("csrfToken", BASE_COOKIE_OPTIONS);
 
   if (!refreshToken) return res.sendStatus(StatusCodes.NO_CONTENT);
 
@@ -114,9 +114,9 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("[refreshAccessToken] Refresh failed:", err);
-    res.clearCookie("refreshToken", { path: "/" });
-    res.clearCookie("accessToken", { path: "/" });
-    res.clearCookie("csrfToken", { path: "/" });
+    res.clearCookie("refreshToken", BASE_COOKIE_OPTIONS);
+    res.clearCookie("accessToken", BASE_COOKIE_OPTIONS);
+    res.clearCookie("csrfToken", BASE_COOKIE_OPTIONS);
     res.status(StatusCodes.UNAUTHORIZED).json({ message: "Refresh token expired or invalid" });
   }
 };

@@ -13,7 +13,6 @@ export interface DeleteEvidenceResponse {
     id: number;
     text: string | null;
     subSkillId: number | null;
-    dataCollectionId: number | null;
     evidenceUrl: string | null;
     createdAt: string;
     approvalStatus: string;
@@ -21,19 +20,14 @@ export interface DeleteEvidenceResponse {
 }
 
 export class DeleteSfiaEvidenceService {
-  async deleteEvidence(
-    request: DeleteEvidenceRequest
-  ): Promise<DeleteEvidenceResponse> {
+  async deleteEvidence(request: DeleteEvidenceRequest): Promise<DeleteEvidenceResponse> {
     this.validateRequest(request);
     try {
-      const response: AxiosResponse<DeleteEvidenceResponse> = await api.delete(
-        `/sfia/evidence/delete`,
-        {
-          data: {
-            subSkillId: request.subSkillId,
-          },
-        }
-      );
+      const response: AxiosResponse<DeleteEvidenceResponse> = await api.delete(`/sfia/evidence/delete`, {
+        data: {
+          subSkillId: request.subSkillId,
+        },
+      });
 
       return response.data;
     } catch (error: unknown) {
@@ -46,13 +40,9 @@ export class DeleteSfiaEvidenceService {
         }
 
         if (error.response?.status === 403) {
-          throw new Error(
-            "Forbidden: You don't have permission to delete this evidence"
-          );
+          throw new Error("Forbidden: You don't have permission to delete this evidence");
         }
-        const errorMessage =
-          (error.response?.data as { message?: string })?.message ||
-          error.message;
+        const errorMessage = (error.response?.data as { message?: string })?.message || error.message;
         throw new Error(`Failed to delete evidence: ${errorMessage}`);
       }
 
@@ -61,24 +51,17 @@ export class DeleteSfiaEvidenceService {
   }
 
   private isAxiosError(error: unknown): error is import("axios").AxiosError {
-    return (
-      typeof error === "object" && error !== null && "isAxiosError" in error
-    );
+    return typeof error === "object" && error !== null && "isAxiosError" in error;
   }
 
   public validateRequest(request: DeleteEvidenceRequest): boolean {
-    if (
-      !request.subSkillId ||
-      typeof request.subSkillId !== "number" ||
-      request.subSkillId <= 0
-    ) {
+    if (!request.subSkillId || typeof request.subSkillId !== "number" || request.subSkillId <= 0) {
       throw new Error("SubSkill ID is required and must be a positive number");
     }
     return true;
   }
 }
 
-export const createDeleteSfiaEvidenceService =
-  (): DeleteSfiaEvidenceService => {
-    return new DeleteSfiaEvidenceService();
-  };
+export const createDeleteSfiaEvidenceService = (): DeleteSfiaEvidenceService => {
+  return new DeleteSfiaEvidenceService();
+};

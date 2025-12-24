@@ -101,7 +101,6 @@ export async function getEvidenceBySkillAndUser(skillCode: string, userId: strin
     }
 
     // [UPDATED] Query evidence data directly using userId
-    // No longer traversing through dataCollection
     const evidenceList = await prismaSfia.subSkill.findMany({
       where: {
         id: { in: subSkillIds },

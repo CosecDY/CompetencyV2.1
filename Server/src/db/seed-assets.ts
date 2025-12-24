@@ -14,7 +14,6 @@ async function main() {
     { tableName: "Description", description: "คำอธิบายระดับ SFIA" },
     { tableName: "SubSkill", description: "ทักษะย่อยของ SFIA" },
     { tableName: "Information", description: "ข้อมูล/หลักฐานการประเมิน" },
-    { tableName: "DataCollection", description: "การเก็บข้อมูลความสามารถผู้ใช้" },
     { tableName: "SfiaSummary", description: "สรุปคะแนนทักษะผู้ใช้" },
 
     // ===== TPQI =====

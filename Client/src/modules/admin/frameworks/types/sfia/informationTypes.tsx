@@ -9,12 +9,6 @@ export interface InformationUser {
   email?: string | null;
 }
 
-export interface InformationDataCollection {
-  id: number;
-  userId: string;
-  user?: InformationUser | null;
-}
-
 export interface Information {
   id: number;
   subSkillId?: number | null;
@@ -22,7 +16,6 @@ export interface Information {
   createdAt: string;
   evidenceUrl?: string | null;
   approvalStatus: InformationApprovalStatus | null;
-  dataCollection?: InformationDataCollection | null;
 }
 
 export interface InformationPageResult {
