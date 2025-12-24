@@ -129,6 +129,37 @@ export class DatabaseManagement<M extends Record<string, any>> {
   }
 
   /**
+   * Create multiple records
+   * @param params Arguments for model.createMany(...)
+   * @param actor Who performs this operation
+   * @param requestId Optional correlation ID
+   * @param logger Optional logger instance
+   * @param txClient Optional transactional client
+   * @returns The result of createMany (usually { count: number })
+   */
+  public async createMany(
+    params: Parameters<M["createMany"]>[0],
+    actor: string = this.defaultActor,
+    requestId?: string,
+    logger: Logger = this.defaultLogger,
+    txClient?: M
+  ): Promise<Awaited<ReturnType<M["createMany"]>>> {
+    try {
+      const client = txClient ?? this.model;
+
+      const result = await (client as any).createMany(params);
+
+      await this.logEvent("INFO", "CREATE", result, actor, requestId, logger);
+
+      return result as Awaited<ReturnType<M["createMany"]>>;
+    } catch (err: any) {
+      await this.logEvent("ERROR", "CREATE", { error: err.message }, actor, requestId, logger);
+
+      throw new DatabaseError("CREATE", this.modelName, err);
+    }
+  }
+
+  /**
    * Update a record
    * @param params Arguments for model.update(...)
    * @param actor Who performs this operation
@@ -168,11 +199,11 @@ export class DatabaseManagement<M extends Record<string, any>> {
     try {
       const client = txClient ?? this.model;
       const result = await (client as any).updateMany(params);
-      await this.logEvent("INFO", "UPDATE_MANY", result, actor, requestId, logger);
+      await this.logEvent("INFO", "UPDATE", result, actor, requestId, logger);
       return result as Awaited<ReturnType<M["updateMany"]>>;
     } catch (err: any) {
-      await this.logEvent("ERROR", "UPDATE_MANY", { error: err.message }, actor, requestId, logger);
-      throw new DatabaseError("UPDATE_MANY", this.modelName, err);
+      await this.logEvent("ERROR", "UPDATE", { error: err.message }, actor, requestId, logger);
+      throw new DatabaseError("UPDATE", this.modelName, err);
     }
   }
 
@@ -216,11 +247,11 @@ export class DatabaseManagement<M extends Record<string, any>> {
     try {
       const client = txClient ?? this.model;
       const result = await client.deleteMany(params);
-      await this.logEvent("INFO", "DELETE_MANY", result, actor, requestId, logger);
+      await this.logEvent("INFO", "DELETE", result, actor, requestId, logger);
       return result as Awaited<ReturnType<M["deleteMany"]>>;
     } catch (err: any) {
-      await this.logEvent("ERROR", "DELETE_MANY", { error: err.message }, actor, requestId, logger);
-      throw new DatabaseError("DELETE_MANY", this.modelName, err);
+      await this.logEvent("ERROR", "DELETE", { error: err.message }, actor, requestId, logger);
+      throw new DatabaseError("DELETE", this.modelName, err);
     }
   }
 

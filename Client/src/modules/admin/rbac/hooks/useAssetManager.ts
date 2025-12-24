@@ -1,7 +1,7 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AssetsService } from "modules/admin/rbac/services/rbac/assetsService";
 import { Asset, AssetPageResult, CreateAssetDto, UpdateAssetDto } from "modules/admin/rbac/types/assetTypes";
-import { RolePermission } from "modules/admin/rbac/types/rbac/rolePermissionTypes";
+import { RolePermission } from "../types/rolePermissionTypes";
 
 type ToastCallback = (message: string, type?: "success" | "error" | "info") => void;
 

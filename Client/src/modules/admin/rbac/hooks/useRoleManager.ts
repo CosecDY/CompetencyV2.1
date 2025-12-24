@@ -1,6 +1,6 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RolesService } from "modules/admin/rbac/services/rbac/rolesService";
-import { Role, RolePageResult, CreateRoleDto, UpdateRoleDto } from "@Types/competency/rbacTypes";
+import { Role, RolePageResult, CreateRoleDto, UpdateRoleDto } from "../types/roleTypes";
 
 type ToastCallback = (message: string, type?: "success" | "error" | "info") => void;
 
@@ -98,5 +98,6 @@ export function useRoleManager(options?: { id?: number | null; search?: string; 
     createRole,
     updateRole,
     deleteRole,
+    currentPageQuery,
   };
 }

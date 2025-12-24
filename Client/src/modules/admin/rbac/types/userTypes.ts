@@ -14,3 +14,13 @@ export interface User {
   updatedAt: string;
   permissions?: string[];
 }
+
+export interface UserWithRoles extends User {
+  roles?: UserRoleDetail[];
+}
+
+export interface UserRoleDetail {
+  id: number;
+  name: string;
+  description?: string;
+}

@@ -17,6 +17,7 @@ export default defineConfig({
       "@Layouts": path.resolve(__dirname, "src/layouts"),
       "@Utils": path.resolve(__dirname, "src/utils"),
       "@Assets": path.resolve(__dirname, "src/assets"),
+      "@Constants": path.resolve(__dirname, "src/constants"),
     },
   },
   // Source map configuration

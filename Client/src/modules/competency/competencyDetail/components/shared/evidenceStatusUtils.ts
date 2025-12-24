@@ -23,39 +23,44 @@ export interface StatusConfig {
 }
 
 // Utility function to determine status
-export const getEvidenceStatus = (evidenceLoading: boolean, loading: boolean, error: string, url: string, submitted: boolean, approvalStatus?: string | null, deleting?: boolean): EvidenceStatus => {
+export const getEvidenceStatus = (
+  evidenceLoading: boolean,
+  loading: boolean,
+  error: string | null | undefined,
+  url: string | null | undefined,
+  submitted: boolean,
+  approvalStatus?: string | null,
+  deleting?: boolean
+): EvidenceStatus => {
   if (deleting) return EvidenceStatus.DELETING;
-  if (evidenceLoading) return EvidenceStatus.LOADING;
-  if (loading) return EvidenceStatus.LOADING;
+  if (evidenceLoading || loading) return EvidenceStatus.LOADING;
   if (error) return EvidenceStatus.ERROR;
 
   if (submitted) {
-    // Normalize approval status for comparison (case-insensitive)
-    const normalizedStatus = approvalStatus?.toUpperCase?.() || "";
+    const normalizedStatus = approvalStatus?.trim().toUpperCase() || "";
 
     switch (normalizedStatus) {
       case ApprovalStatus.APPROVED:
       case "APPROVE":
       case "ACCEPTED":
         return EvidenceStatus.APPROVED;
+
       case ApprovalStatus.REJECTED:
       case "REJECT":
       case "DECLINED":
         return EvidenceStatus.REJECTED;
+
       case ApprovalStatus.PENDING:
-      case "PENDING":
       case "WAITING":
       case "":
-      case null:
-      case undefined:
         return EvidenceStatus.PENDING;
+
       default:
         return EvidenceStatus.PENDING;
     }
   }
 
-  const finalStatus = url ? EvidenceStatus.READY_TO_SUBMIT : EvidenceStatus.NOT_STARTED;
-  return finalStatus;
+  return url ? EvidenceStatus.READY_TO_SUBMIT : EvidenceStatus.NOT_STARTED;
 };
 
 // Status configuration mapping
@@ -104,5 +109,5 @@ export const STATUS_CONFIGS: Record<EvidenceStatus, StatusConfig> = {
 
 // Helper function to get status config
 export const getStatusConfig = (status: EvidenceStatus): StatusConfig => {
-  return STATUS_CONFIGS[status];
+  return STATUS_CONFIGS[status] || STATUS_CONFIGS[EvidenceStatus.NOT_STARTED];
 };

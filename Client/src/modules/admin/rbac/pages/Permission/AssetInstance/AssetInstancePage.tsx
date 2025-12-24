@@ -14,6 +14,7 @@ export default function AssetInstancePage() {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
@@ -21,7 +22,10 @@ export default function AssetInstancePage() {
   }, [searchText]);
 
   useEffect(() => setPage(1), [debouncedSearchText]);
-
+  const refreshTable = () => {
+    assetInstancesQuery.refetch();
+    setRefreshKey((prev) => prev + 1);
+  };
   const handleToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
   };
@@ -56,6 +60,7 @@ export default function AssetInstancePage() {
           handleToast("AssetInstance created successfully!", "success");
           closeModal();
           assetInstancesQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -70,6 +75,7 @@ export default function AssetInstancePage() {
           handleToast("AssetInstance updated successfully!", "success");
           closeModal();
           assetInstancesQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -84,6 +90,7 @@ export default function AssetInstancePage() {
           handleToast("AssetInstance deleted successfully!", "success");
           closeModal();
           assetInstancesQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -116,8 +123,10 @@ export default function AssetInstancePage() {
       <div className="z-10 flex flex-col mb-3 sm:flex-row sm:justify-between sm:items-start">
         <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">Asset Instances</h1>
         <div className="flex flex-col items-end space-y-2">
-          <Button size="md" onClick={openAddModal} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Instance
+          <Button size="md" onClick={openAddModal}>
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add Instance
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search recordId..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
@@ -128,7 +137,7 @@ export default function AssetInstancePage() {
 
       <DataTable<AssetInstance>
         key={debouncedSearchText}
-        resetTrigger={debouncedSearchText}
+        resetTrigger={`${debouncedSearchText}-${refreshKey}`}
         fetchPage={fetchPage}
         columns={columns}
         pageSizes={[5, 10, 20]}

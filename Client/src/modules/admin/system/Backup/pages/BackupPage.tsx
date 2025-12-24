@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AdminLayout } from "@Layouts/AdminLayout";
 import { Card, Button } from "@Components/Admin/ExportComponent";
-import { BiRefresh, BiDownload, BiChevronRight, BiShieldQuarter } from "react-icons/bi";
+import { BiRefresh, BiDownload, BiShieldQuarter } from "react-icons/bi";
 import { FaCheckCircle, FaDatabase } from "react-icons/fa";
 import { useAdvancedBackup } from "modules/admin/blackup/hooks/useBackup";
 import { BackupService } from "modules/admin/system/Backup/services/BackupService";
@@ -139,7 +139,7 @@ export const BackupPage: React.FC = () => {
             </Card>
           </div>
 
-          <div className="space-y-6">
+          {/* <div className="space-y-6">
             <Card className="p-6 border-none shadow-soft bg-surface">
               <h3 className="font-bold text-maintext mb-4">Backup Policy</h3>
               <div className="space-y-4">
@@ -169,7 +169,7 @@ export const BackupPage: React.FC = () => {
                 </button>
               </div>
             </Card>
-          </div>
+          </div> */}
         </div>
       </div>
     </AdminLayout>

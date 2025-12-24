@@ -58,6 +58,25 @@ export class UserRoleController {
     }
   }
 
+  static async updateUserRoles(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { userId, roleIds } = req.body;
+      const actor = req.user?.userId || "system";
+
+      if (!userId || !Array.isArray(roleIds)) {
+        return res.status(400).json({ error: "userId and roleIds (array of numbers) are required" });
+      }
+
+      const result = await service.updateUserRoles(userId, roleIds, actor);
+
+      return res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[RBAC] updateUserRoles error:", error);
+
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   // ยกเลิก role ของ user
   static async revokeRole(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {

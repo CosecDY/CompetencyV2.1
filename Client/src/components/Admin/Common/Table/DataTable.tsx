@@ -27,8 +27,9 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
 
   useEffect(() => {
     setCache({});
-    setPageIndex(0);
     loadingPagesRef.current.clear();
+    setErrorPages({});
+    setPageIndex(0);
   }, [resetTrigger]);
 
   const totalPages = Math.max(Math.ceil(totalRows / pageSize), 1);
@@ -72,8 +73,8 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
   );
 
   useEffect(() => {
-    loadPagesSlidingWindow(0);
-  }, [loadPagesSlidingWindow, resetTrigger]);
+    loadPagesSlidingWindow(pageIndex);
+  }, [loadPagesSlidingWindow, pageIndex]);
 
   const table = useReactTable({
     data: cache[pageIndex] ?? [],
@@ -171,13 +172,7 @@ function DataTable<T extends object>({ fetchPage, columns, pageSizes = [5, 10, 2
                   <tr key={`skeleton-${rowIdx}`}>
                     {columns.map((_, colIdx) => (
                       <td key={colIdx} className="px-6 py-4">
-                        <Skeleton
-                          height={20}
-                          width={getRandomWidth()}
-                          baseColor="#f8fafc" // Slate-50
-                          highlightColor="#e2e8f0" // Slate-200
-                          borderRadius={4}
-                        />
+                        <Skeleton height={20} width={getRandomWidth()} baseColor="#f8fafc" highlightColor="#e2e8f0" borderRadius={4} />
                       </td>
                     ))}
                   </tr>

@@ -40,6 +40,7 @@
       "@Database/*": ["db/*"],
       "@Types/*": ["types/*"],
       "@Configs/*": ["config/*"],
+      "@Constants/*": ["constants/*"],
 
       "@SFIA/*": ["modules/sfia/*"],
       "@Admin/*": ["modules/admin/*"],

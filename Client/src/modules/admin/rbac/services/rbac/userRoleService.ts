@@ -8,6 +8,11 @@ export const UserRoleService = {
     return res.data;
   },
 
+  updateUserRoles: async (payload: UserRoleAssignmentDto): Promise<UserRole[]> => {
+    const res: AxiosResponse<UserRole[]> = await api.put("/admin/rbac/user-roles", payload);
+    return res.data;
+  },
+
   revokeRoleFromUser: async (userId: string, roleId: number): Promise<UserRole> => {
     const res: AxiosResponse<UserRole> = await api.delete("/admin/rbac/user-roles", { data: { userId, roleId } });
     return res.data;

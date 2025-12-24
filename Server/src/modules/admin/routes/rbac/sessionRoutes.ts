@@ -1,23 +1,25 @@
 import { Router } from "express";
 import { SessionController } from "@/modules/admin/controllers/rbac/sessionController";
 import { withAuth } from "@/middlewares/withAuth";
+import { Action, Resource } from "@Constants/resources"; // นำเข้า Enum มาใช้งาน
 
 const router = Router();
 
-router.post("/sessions", withAuth({ resource: "Session", action: "create" }, SessionController.createSession));
+// ใช้ Resource.Session (ใน DB คือ "session") เพื่อควบคุมสิทธิ์การจัดการ Login Session
+router.post("/sessions", withAuth({ resource: Resource.Session, action: Action.Create }, SessionController.createSession));
 
-router.get("/sessions", withAuth({ resource: "Session", action: "read" }, SessionController.getAll));
+router.get("/sessions", withAuth({ resource: Resource.Session, action: Action.Read }, SessionController.getAll));
 
-router.get("/sessions/:id", withAuth({ resource: "Session", action: "read" }, SessionController.getSessionById));
+router.get("/sessions/:id", withAuth({ resource: Resource.Session, action: Action.Read }, SessionController.getSessionById));
 
-router.get("/sessions/by-access-token", withAuth({ resource: "Session", action: "read" }, SessionController.getSessionByAccessToken));
+router.get("/sessions/by-access-token", withAuth({ resource: Resource.Session, action: Action.Read }, SessionController.getSessionByAccessToken));
 
-router.get("/sessions/by-refresh-token", withAuth({ resource: "Session", action: "read" }, SessionController.getSessionByRefreshToken));
+router.get("/sessions/by-refresh-token", withAuth({ resource: Resource.Session, action: Action.Read }, SessionController.getSessionByRefreshToken));
 
-router.delete("/sessions/:id", withAuth({ resource: "Session", action: "delete" }, SessionController.deleteSessionById));
+router.delete("/sessions/:id", withAuth({ resource: Resource.Session, action: Action.Delete }, SessionController.deleteSessionById));
 
-router.delete("/sessions/user/:userId", withAuth({ resource: "Session", action: "delete" }, SessionController.deleteSessionsByUserId));
+router.delete("/sessions/user/:userId", withAuth({ resource: Resource.Session, action: Action.Delete }, SessionController.deleteSessionsByUserId));
 
-router.get("/sessions/:id/expired", withAuth({ resource: "Session", action: "read" }, SessionController.isSessionExpired));
+router.get("/sessions/:id/expired", withAuth({ resource: Resource.Session, action: Action.Read }, SessionController.isSessionExpired));
 
 export default router;

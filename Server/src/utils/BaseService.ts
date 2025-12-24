@@ -1,10 +1,5 @@
 export class BaseService<T extends Record<string, any>, K extends keyof T> {
-  constructor(
-    protected readonly repo: any,
-    protected readonly searchFields: string[],
-    private readonly pkField: keyof T,
-    protected readonly includes?: Record<string, boolean>
-  ) { }
+  constructor(protected readonly repo: any, protected readonly searchFields: string[], private readonly pkField: keyof T, protected readonly includes?: Record<string, boolean>) {}
 
   /**
    * Get all records with optional search and pagination.
@@ -56,7 +51,6 @@ export class BaseService<T extends Record<string, any>, K extends keyof T> {
    */
   getById(id: T[typeof this.pkField], txClient?: any): Promise<T | null> {
     return this.repo.findById(id, txClient);
-
   }
 
   /**

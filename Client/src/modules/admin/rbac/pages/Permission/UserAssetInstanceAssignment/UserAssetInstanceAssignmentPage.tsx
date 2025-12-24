@@ -102,7 +102,9 @@ export default function UserAssetInstanceAssignmentPage() {
         <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">User Asset Instances</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={() => openAssignModal()} className="flex items-center">
-            <FiPlus className="mr-2" /> Assign Asset
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Assign Asset
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search asset instances..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />

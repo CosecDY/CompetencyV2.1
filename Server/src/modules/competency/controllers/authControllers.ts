@@ -144,20 +144,36 @@ export const getCurrentUser = async (req: AuthenticatedRequest, res: Response) =
 export const checkViewAccess = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { resource } = req.query;
+
     if (!resource) {
+      console.warn("[checkViewAccess] Missing resource in query");
       return res.status(StatusCodes.BAD_REQUEST).json({ allowed: false, message: "resource is required" });
     }
 
+    if (!req.user) {
+      console.warn("[checkViewAccess] No user in request");
+      return res.status(StatusCodes.OK).json({ allowed: false });
+    }
+
     let allowed = false;
-    if (req.user) {
-      allowed = await PermissionService.hasInstancePermission(req.user, String(resource), "read");
-      if (!allowed) {
-        allowed = await PermissionService.hasPermission(req.user, String(resource), "read");
-      }
+
+    // 1. Instance-based permission
+    allowed = await PermissionService.hasInstancePermission(req.user, String(resource), "read");
+
+    // 2. General permission (fallback)
+    if (!allowed) {
+      allowed = await PermissionService.hasPermission(req.user, String(resource), "read");
     }
     res.status(StatusCodes.OK).json({ allowed });
   } catch (err: any) {
-    console.error("[checkViewAccess] Error:", err);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ allowed: false, message: err.message || "Internal server error" });
+    console.error("[checkViewAccess] ❌ Error occurred:", {
+      message: err.message,
+      stack: err.stack,
+    });
+
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      allowed: false,
+      message: err.message || "Internal server error",
+    });
   }
 };

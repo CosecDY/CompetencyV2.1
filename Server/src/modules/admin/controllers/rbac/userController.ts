@@ -124,8 +124,7 @@ export class UserController {
       }
 
       const users = await service.searchUsersByEmail(emailQuery.trim(), 10);
-
-      res.json(users.map(UserView));
+      res.json(users);
     } catch (error) {
       next(error);
     }

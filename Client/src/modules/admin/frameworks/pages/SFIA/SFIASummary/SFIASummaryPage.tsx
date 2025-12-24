@@ -35,7 +35,7 @@ export default function SFIASummaryPage() {
       },
       {
         accessorKey: "userId",
-        header: "User Email",
+        header: "User ID",
         cell: ({ row }: { row: { original: SFIASummary } }) => <span className="text-sm">{row.original.userId || "—"}</span>,
       },
       {

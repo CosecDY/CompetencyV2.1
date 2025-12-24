@@ -1,7 +1,7 @@
 import { UserRolesRepository } from "@/modules/admin/repositories/RoleRepository";
 import type { UserRole } from "@prisma/client_competency";
 import { BaseService } from "@Utils/BaseService";
-
+import { COMPETENCY } from "@/db/dbManagers";
 export class UserRoleService extends BaseService<UserRole, keyof UserRole> {
   constructor() {
     super(new UserRolesRepository(), ["userId"], "id");
@@ -9,21 +9,12 @@ export class UserRoleService extends BaseService<UserRole, keyof UserRole> {
 
   async assignRoleToUser(userId: string, roleId: number, actor: string = "system") {
     try {
-      console.log(`[RBAC] assignRoleToUser called`, { userId, roleId, actor });
-
       const existing = await this.repo.findFirst({ where: { userId, roleId } });
       if (existing) {
-        console.log(`[RBAC] Role already assigned to user`, { userId, roleId });
         throw new Error("Role already assigned to user");
       }
 
-      // log ก่อน create
-      console.log(`[RBAC] Creating UserRole...`, { userId, roleId, assignedAt: new Date() });
-
       const result = await this.repo.create({ userId, roleId, assignedAt: new Date() }, actor);
-
-      // log หลัง create
-      console.log(`[RBAC] UserRole created successfully`, { result });
 
       return result;
     } catch (error) {
@@ -75,5 +66,53 @@ export class UserRoleService extends BaseService<UserRole, keyof UserRole> {
 
     const data = await this.repo.findMany(commonQuery);
     return { data, total: data.length };
+  }
+
+  async updateUserRoles(userId: string, roleIds: number[], actor: string = "system") {
+    try {
+      await COMPETENCY.userRole.deleteMany({
+        where: {
+          userId: userId,
+          roleId: { notIn: roleIds },
+        },
+      });
+
+      // 2. ตรวจสอบ Role ปัจจุบันที่เหลืออยู่ (หลังจากลบ)
+      const currentRoles = await COMPETENCY.userRole.findMany({
+        where: {
+          userId: userId,
+          roleId: { in: roleIds },
+        },
+        select: { roleId: true },
+      });
+
+      const currentRoleIds = currentRoles.map((r: any) => r.roleId);
+
+      // 3. กรองหา ID ใหม่ที่ต้องเพิ่มจริงๆ
+      const newRoleIds = roleIds.filter((id: number) => !currentRoleIds.includes(id));
+
+      // 4. เพิ่ม Role ใหม่ (ถ้ามี)
+      if (newRoleIds.length > 0) {
+        await COMPETENCY.userRole.createMany({
+          data: newRoleIds.map((roleId: number) => ({
+            userId: userId,
+            roleId: roleId,
+            assignedAt: new Date(),
+          })),
+        });
+      }
+
+      // 5. ดึงข้อมูลล่าสุดกลับไปแสดงผล
+      return await COMPETENCY.userRole.findMany({
+        where: { userId },
+        include: {
+          role: true,
+          user: { select: { email: true } },
+        },
+      });
+    } catch (error: any) {
+      console.error(`[RBAC] Failed to update roles for user ${userId}:`, error.message);
+      throw error;
+    }
   }
 }

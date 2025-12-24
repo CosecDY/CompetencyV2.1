@@ -93,5 +93,6 @@ export function usePermissionManager(options?: { id?: number | null; search?: st
     createPermission,
     updatePermission,
     deletePermission,
+    currentPageQuery,
   };
 }

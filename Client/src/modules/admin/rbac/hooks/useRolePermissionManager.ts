@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RolePermissionsService } from "modules/admin/rbac/services/rbac/rolePermissionsService";
-import { RolePermission } from "modules/admin/rbac/types/rbac/rolePermissionTypes";
+import { RolePermission } from "../types/rolePermissionTypes";
 
 type ToastCallback = (message: string, type?: "success" | "error" | "info") => void;
 

@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios";
 import api from "@Services/api";
-import { User } from "modules/admin/rbac/types/userTypes";
+import { User, UserWithRoles } from "modules/admin/rbac/types/userTypes";
 import { Role } from "modules/admin/rbac/types/roleTypes";
 import { Session } from "modules/admin/rbac/types/sessionTypes";
 
@@ -60,11 +60,13 @@ export const UsersService = {
     const res: AxiosResponse<Role[]> = await api.get(`/admin/rbac/user-roles/user/${userId}`);
     return res.data;
   },
-  searchUsersByEmail: async (email: string): Promise<User[]> => {
-    if (!email.trim()) return [];
-    const res: AxiosResponse<User[]> = await api.get("/admin/rbac/users/search-by-email", {
-      params: { email },
+  searchUsersByEmail: async (email: string): Promise<UserWithRoles[]> => {
+    if (!email || !email.trim()) return [];
+    const res: AxiosResponse<UserWithRoles[]> = await api.get("/admin/rbac/users/search-by-email", {
+      params: { email: email.trim() },
     });
+    console.log(res.data);
+
     return res.data;
   },
 };

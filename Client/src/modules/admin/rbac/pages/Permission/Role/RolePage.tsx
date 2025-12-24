@@ -14,6 +14,7 @@ export default function RolePage() {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
@@ -22,11 +23,16 @@ export default function RolePage() {
 
   useEffect(() => setPage(1), [debouncedSearchText]);
 
+  const refreshTable = () => {
+    currentPageQuery.refetch();
+    setRefreshKey((prev) => prev + 1);
+  };
+
   const handleToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
   };
 
-  const { fetchPage, rolesQuery, createRole, updateRole, deleteRole } = useRoleManager({ search: debouncedSearchText, page, perPage }, handleToast);
+  const { fetchPage, rolesQuery, createRole, updateRole, deleteRole, currentPageQuery } = useRoleManager({ search: debouncedSearchText, page, perPage }, handleToast);
 
   const openAddModal = () => {
     setSelectedRoleInternal(null);
@@ -55,6 +61,7 @@ export default function RolePage() {
         handleToast("Role created successfully!", "success");
         closeModal();
         rolesQuery.refetch();
+        refreshTable();
       },
     });
   };
@@ -69,6 +76,7 @@ export default function RolePage() {
           handleToast("Role updated successfully!", "success");
           closeModal();
           rolesQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -81,6 +89,7 @@ export default function RolePage() {
         handleToast("Role deleted successfully!", "success");
         closeModal();
         rolesQuery.refetch();
+        refreshTable();
       },
     });
   };
@@ -113,7 +122,9 @@ export default function RolePage() {
         <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">Roles</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={openAddModal} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Role
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add Role
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search roles..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
@@ -124,7 +135,7 @@ export default function RolePage() {
 
       <DataTable<Role>
         key={debouncedSearchText}
-        resetTrigger={debouncedSearchText}
+        resetTrigger={`${debouncedSearchText}-${refreshKey}`}
         fetchPage={fetchPage}
         columns={columns}
         pageSizes={[5, 10, 20]}

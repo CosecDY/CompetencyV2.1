@@ -11,13 +11,17 @@ export default function UserRoleAssignmentPage() {
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [modalType, setModalType] = useState<"assign" | "revoke" | null>(null);
+
   const [selectedUserRole, setSelectedUserRole] = useState<UserRole | null>(null);
+
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const { rolesQuery } = useRoleManager({});
   const allRoles = rolesQuery.data?.data ?? [];
+
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
@@ -26,11 +30,16 @@ export default function UserRoleAssignmentPage() {
 
   useEffect(() => setPage(1), [debouncedSearchText]);
 
+  const refreshTable = () => {
+    currentPageQuery.refetch();
+    setRefreshKey((prev) => prev + 1);
+  };
+
   const handleToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
   };
 
-  const { fetchPage, assignRolesToUser, revokeRoleFromUser } = useUserRoleManager({ search: debouncedSearchText, page, perPage }, handleToast);
+  const { fetchPage, updateUserRoles, revokeRoleFromUser, currentPageQuery } = useUserRoleManager({ search: debouncedSearchText, page, perPage }, handleToast);
 
   const openAssignModal = (role?: UserRole) => {
     setSelectedUserRole(role ?? null);
@@ -47,10 +56,12 @@ export default function UserRoleAssignmentPage() {
 
   const confirmAssign = (userId: string, roleIds: number[]) => {
     const dto: UserRoleAssignmentDto = { userId, roleIds };
-    assignRolesToUser.mutate(dto, {
+
+    updateUserRoles.mutate(dto, {
       onSuccess: () => {
-        handleToast("Roles assigned successfully!", "success");
+        handleToast("User roles updated successfully!", "success");
         closeModal();
+        refreshTable();
       },
     });
   };
@@ -62,6 +73,7 @@ export default function UserRoleAssignmentPage() {
         onSuccess: () => {
           handleToast("Role revoked successfully!", "success");
           closeModal();
+          refreshTable();
         },
       }
     );
@@ -97,10 +109,12 @@ export default function UserRoleAssignmentPage() {
         <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">User Roles</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={() => openAssignModal()} className="flex items-center">
-            <FiPlus className="mr-2" /> Assign Role
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Assign / Manage Roles
+            </div>
           </Button>
           <div className="relative">
-            <Input type="text" placeholder="Search roles..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
+            <Input type="text" placeholder="Search by email..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
             <FiSearch className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
         </div>
@@ -108,7 +122,7 @@ export default function UserRoleAssignmentPage() {
 
       <DataTable<UserRole>
         key={debouncedSearchText}
-        resetTrigger={debouncedSearchText}
+        resetTrigger={`${debouncedSearchText}-${refreshKey}`}
         fetchPage={fetchPage}
         columns={columns}
         pageSizes={[5, 10, 20]}
@@ -118,11 +132,11 @@ export default function UserRoleAssignmentPage() {
 
       <AssignRoleModal
         isOpen={modalType === "assign"}
-        selectedRole={selectedUserRole}
+        initialUser={selectedUserRole ? { id: selectedUserRole.userId, email: selectedUserRole.userEmail || "" } : null}
         allRoles={allRoles}
         onClose={closeModal}
         onConfirm={confirmAssign}
-        isLoading={assignRolesToUser.status === "pending"}
+        isLoading={updateUserRoles.status === "pending"}
       />
 
       <RevokeRoleModal isOpen={modalType === "revoke"} selectedRole={selectedUserRole} onClose={closeModal} onConfirm={confirmRevoke} isLoading={revokeRoleFromUser.status === "pending"} />

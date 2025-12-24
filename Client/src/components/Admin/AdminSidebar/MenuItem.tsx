@@ -1,5 +1,6 @@
 import { FiHome, FiUsers, FiLock, FiCopy, FiBarChart2, FiKey } from "react-icons/fi";
 import { MenuItemBase, Group } from "./AdminSidebarType";
+import { Resource } from "@Constants/resources";
 
 // Main menu
 export const mainMenu: MenuItemBase[] = [
@@ -17,14 +18,14 @@ export const rbacGroups: Group[] = [
     icon: <FiKey />,
     key: "rbac",
     items: [
-      { label: "Assets", path: "/admin/assets", resource: "Asset" },
-      { label: "Asset Instances", path: "/admin/asset-instances", resource: "AssetInstance" },
-      { label: "Operations", path: "/admin/operations", resource: "Operation" },
-      { label: "Permissions", path: "/admin/permissions", resource: "Permission" },
-      { label: "Role Permissions", path: "/admin/role-permissions", resource: "RolePermission" },
-      { label: "Roles", path: "/admin/roles", resource: "Role" },
-      { label: "User Asset Instances", path: "/admin/user-asset-instances", resource: "UserAssetInstance" },
-      { label: "User Roles", path: "/admin/user-roles", resource: "UserRole" },
+      { label: "Assets", path: "/admin/assets", resource: Resource.Asset },
+      { label: "Asset Instances", path: "/admin/asset-instances", resource: Resource.AssetInstance },
+      { label: "Operations", path: "/admin/operations", resource: Resource.Operation },
+      { label: "Permissions", path: "/admin/permissions", resource: Resource.Permission },
+      { label: "Role Permissions", path: "/admin/role-permissions", resource: Resource.RolePermission },
+      { label: "Roles", path: "/admin/roles", resource: Resource.Role },
+      { label: "User Asset Instances", path: "/admin/user-asset-instances", resource: Resource.UserAssetInstance },
+      { label: "User Roles", path: "/admin/user-roles", resource: Resource.UserRole },
     ],
   },
 ];
@@ -36,14 +37,14 @@ export const frameworks: Group[] = [
     icon: <FiBarChart2 />,
     key: "sfia",
     items: [
-      { label: "Categories", path: "/admin/sfia/category", resource: "Category" },
-      { label: "Descriptions", path: "/admin/sfia/description", resource: "Description" },
-      { label: "Levels", path: "/admin/sfia/level", resource: "Level" },
-      { label: "Skills", path: "/admin/sfia/skill", resource: "Skill" },
-      { label: "SubCategories", path: "/admin/sfia/subcategory", resource: "Subcategory" },
-      { label: "SFIA Summary", path: "/admin/sfia/sfiasummary", resource: "SFIAsummary" },
-      { label: "Information", path: "/admin/sfia/information", resource: "Information" },
-      { label: "SubSkill", path: "/admin/sfia/subskill", resource: "SubSkill" },
+      { label: "Categories", path: "/admin/sfia/category", resource: Resource.SfiaCategory },
+      { label: "SubCategories", path: "/admin/sfia/subcategory", resource: Resource.SfiaSubcategory },
+      { label: "Skills", path: "/admin/sfia/skill", resource: Resource.SfiaSkill },
+      { label: "SubSkill", path: "/admin/sfia/subskill", resource: Resource.SfiaSubSkill },
+      { label: "Levels", path: "/admin/sfia/level", resource: Resource.SfiaLevel },
+      { label: "Descriptions", path: "/admin/sfia/description", resource: Resource.SfiaDescription },
+      { label: "Information", path: "/admin/sfia/information", resource: Resource.SfiaInformation },
+      { label: "SFIA Summary", path: "/admin/sfia/sfiasummary", resource: Resource.SfiaSummary },
     ],
   },
   {
@@ -51,25 +52,28 @@ export const frameworks: Group[] = [
     icon: <FiCopy />,
     key: "tpqi",
     items: [
-      { label: "Career", path: "/admin/tpqi/career", resource: "Career" },
-      { label: "Career Level", path: "/admin/tpqi/careerlevel", resource: "CareerLevel" },
-      { label: "CareerLevel Detail", path: "/admin/tpqi/cldetail", resource: "ClDetail" },
-      { label: "CareerLevel Knowledge", path: "/admin/tpqi/clknowledge", resource: "ClKnowledge" },
-      { label: "CareerLevel Skill", path: "/admin/tpqi/clskill", resource: "ClSkill" },
-      { label: "CareerLevel Unit Code", path: "/admin/tpqi/clunitcode", resource: "ClUnitCode" },
-      { label: "Knowledge", path: "/admin/tpqi/knowledge", resource: "Knowledge" },
-      { label: "Level", path: "/admin/tpqi/level", resource: "Level" },
-      { label: "Occupational", path: "/admin/tpqi/occupational", resource: "Occupational" },
-      { label: "Sector", path: "/admin/tpqi/sector", resource: "Sector" },
-      { label: "Skill", path: "/admin/tpqi/skill", resource: "Skill" },
-      { label: "TPQI Summary", path: "/admin/tpqi/tpqisummary", resource: "TPQISummary" },
-      { label: "Unit Code", path: "/admin/tpqi/unitcode", resource: "UnitCode" },
-      { label: "Unit Knowledge", path: "/admin/tpqi/unitknowledge", resource: "UnitKnowledge" },
-      { label: "Unit Occupational", path: "/admin/tpqi/unitoccupational", resource: "UnitOccupational" },
-      { label: "Unit Sector", path: "/admin/tpqi/unitsector", resource: "UnitSector" },
-      { label: "Unit Skill", path: "/admin/tpqi/unitskill", resource: "UnitSkill" },
-      { label: "User Knowledge", path: "/admin/tpqi/userknowledge", resource: "UserKnowledge" },
-      { label: "User Skill", path: "/admin/tpqi/userskill", resource: "UserSkill" },
+      { label: "Sector", path: "/admin/tpqi/sector", resource: Resource.TpqiSector },
+      { label: "Career", path: "/admin/tpqi/career", resource: Resource.TpqiCareer },
+      { label: "Career Level", path: "/admin/tpqi/careerlevel", resource: Resource.TpqiCareerLevel },
+      { label: "Level", path: "/admin/tpqi/level", resource: Resource.TpqiLevel },
+
+      { label: "Knowledge", path: "/admin/tpqi/knowledge", resource: Resource.TpqiKnowledge },
+      { label: "Skill", path: "/admin/tpqi/skill", resource: Resource.TpqiSkill },
+      { label: "Unit Code", path: "/admin/tpqi/unitcode", resource: Resource.TpqiUnitCode },
+      { label: "Occupational", path: "/admin/tpqi/occupational", resource: Resource.TpqiOccupational },
+
+      // Relations / Details
+      { label: "CareerLevel Detail", path: "/admin/tpqi/cldetail", resource: Resource.TpqiCareerLevelDetail },
+      { label: "CareerLevel Knowledge", path: "/admin/tpqi/clknowledge", resource: Resource.TpqiCareerLevelKnowledge },
+      { label: "CareerLevel Skill", path: "/admin/tpqi/clskill", resource: Resource.TpqiCareerLevelSkill },
+      { label: "CareerLevel Unit Code", path: "/admin/tpqi/clunitcode", resource: Resource.TpqiCareerLevelUnitCode },
+
+      { label: "Unit Occupational", path: "/admin/tpqi/unitoccupational", resource: Resource.TpqiUnitOccupational },
+      { label: "Unit Sector", path: "/admin/tpqi/unitsector", resource: Resource.TpqiUnitSector },
+
+      // User Records
+      { label: "User Knowledge", path: "/admin/tpqi/userknowledge", resource: Resource.TpqiUserKnowledge },
+      { label: "User Skill", path: "/admin/tpqi/userskill", resource: Resource.TpqiUserSkill },
     ],
   },
 ];

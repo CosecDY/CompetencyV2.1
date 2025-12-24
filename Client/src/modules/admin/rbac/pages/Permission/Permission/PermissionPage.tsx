@@ -14,6 +14,7 @@ export default function PermissionPage() {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
@@ -22,11 +23,16 @@ export default function PermissionPage() {
 
   useEffect(() => setPage(1), [debouncedSearchText]);
 
+  const refreshTable = () => {
+    currentPageQuery.refetch();
+    setRefreshKey((prev) => prev + 1);
+  };
+
   const handleToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
   };
 
-  const { fetchPage, createPermission, updatePermission, deletePermission } = usePermissionManager({ search: debouncedSearchText, page, perPage }, handleToast);
+  const { fetchPage, createPermission, updatePermission, deletePermission, currentPageQuery } = usePermissionManager({ search: debouncedSearchText, page, perPage }, handleToast);
 
   // Modal handlers
   const openAddModal = () => {
@@ -53,6 +59,7 @@ export default function PermissionPage() {
       onSuccess: () => {
         handleToast("Permission created successfully!", "success");
         closeModal();
+        refreshTable();
       },
     });
   };
@@ -66,6 +73,7 @@ export default function PermissionPage() {
         onSuccess: () => {
           handleToast("Permission updated successfully!", "success");
           closeModal();
+          refreshTable();
         },
       }
     );
@@ -77,6 +85,7 @@ export default function PermissionPage() {
       onSuccess: () => {
         handleToast("Permission deleted successfully!", "success");
         closeModal();
+        refreshTable();
       },
     });
   };
@@ -112,7 +121,9 @@ export default function PermissionPage() {
         <h1 className="text-3xl font-Poppins mb-2 sm:mb-0">Permissions</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={openAddModal} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Permission
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add Permission
+            </div>
           </Button>
           <div className="relative">
             <Input type="text" placeholder="Search permissions..." className="pl-3 pr-30 py-1 text-sm" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
@@ -123,7 +134,7 @@ export default function PermissionPage() {
 
       <DataTable<Permission>
         key={debouncedSearchText}
-        resetTrigger={debouncedSearchText}
+        resetTrigger={`${debouncedSearchText}-${refreshKey}`}
         fetchPage={fetchPage}
         columns={columns}
         pageSizes={[5, 10, 20]}

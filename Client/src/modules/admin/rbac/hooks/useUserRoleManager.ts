@@ -1,5 +1,5 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserRoleService } from "modules/admin/rbac/services/rbac/userRoleService";
+import { UserRoleService } from "modules/admin/rbac/services/rbac/userRoleService"; // ตรวจสอบ path ให้ถูกต้อง
 import { UserRole, UserRoleListResponse, UserRoleAssignmentDto } from "modules/admin/rbac/types/userRoleTypes";
 
 type ToastCallback = (message: string, type?: "success" | "error" | "info") => void;
@@ -39,24 +39,44 @@ export function useUserRoleManager(options?: { search?: string; page?: number; p
   const isError = prefetchQueries.some((q) => q.isError) || (page > initialPrefetchPages && currentPageQuery.isError);
   const error = prefetchQueries.find((q) => q.error)?.error || (page > initialPrefetchPages && currentPageQuery.error);
 
-  // Assign multiple roles to a user
   const assignRolesToUser = useMutation<UserRole[], Error, UserRoleAssignmentDto>({
     mutationFn: (payload: UserRoleAssignmentDto) => UserRoleService.assignRolesToUser(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["userRoles"] });
       onToast?.("Roles assigned successfully", "success");
     },
-    onError: () => onToast?.("Failed to assign roles", "error"),
+    onError: (err) => {
+      console.error(err);
+      onToast?.("Failed to assign roles", "error");
+    },
   });
 
-  // Revoke a single role from a user
+  const updateUserRoles = useMutation<UserRole[], Error, UserRoleAssignmentDto>({
+    mutationFn: (payload: UserRoleAssignmentDto) => UserRoleService.updateUserRoles(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["userRoles"] });
+      queryClient.invalidateQueries({ queryKey: ["userRoles", "user", variables.userId] });
+
+      onToast?.("Roles updated successfully", "success");
+    },
+    onError: (err) => {
+      console.error(err);
+      onToast?.("Failed to update roles", "error");
+    },
+  });
+
+  // 3. Revoke a single role
   const revokeRoleFromUser = useMutation<UserRole, Error, { userId: string; roleId: number }>({
     mutationFn: ({ userId, roleId }: { userId: string; roleId: number }) => UserRoleService.revokeRoleFromUser(userId, roleId),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["userRoles"] });
+      queryClient.invalidateQueries({ queryKey: ["userRoles", "user", variables.userId] });
       onToast?.("Role revoked successfully", "success");
     },
-    onError: () => onToast?.("Failed to revoke role", "error"),
+    onError: (err) => {
+      console.error(err);
+      onToast?.("Failed to revoke role", "error");
+    },
   });
 
   return {
@@ -69,6 +89,8 @@ export function useUserRoleManager(options?: { search?: string; page?: number; p
     },
     fetchPage,
     assignRolesToUser,
+    updateUserRoles,
     revokeRoleFromUser,
+    currentPageQuery,
   };
 }

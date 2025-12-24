@@ -32,6 +32,8 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ value, onChange, 
     setShowDropdown(false);
   };
 
+  const shouldShowDropdown = showDropdown && options.length > 0 && !(options.length === 1 && options[0] === value);
+
   return (
     <div ref={containerRef} className="relative w-full">
       <input
@@ -47,32 +49,33 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({ value, onChange, 
           onChange(e.target.value);
           setShowDropdown(true);
         }}
+        onFocus={() => setShowDropdown(true)}
         placeholder={placeholder}
         disabled={disabled}
-        onFocus={() => setShowDropdown(true)}
       />
 
-      {/* Loading Spinner */}
       {isLoading && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-primary animate-spin">
           <FiLoader size={18} />
         </div>
       )}
 
-      {/* Dropdown Menu */}
-      {showDropdown && options.length > 0 && (
+      {shouldShowDropdown && (
         <ul
-          className="absolute z-50 w-full max-h-60 overflow-y-auto mt-1 rounded-lg border shadow-xl
-          bg-admin-surface border-admin-border"
+          className="absolute z-[9999] w-full max-h-60 overflow-y-auto mt-1 rounded-lg border shadow-xl
+          bg-white border-admin-border"
         >
           {options.map((opt, idx) => (
             <li
               key={idx}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(opt);
+              }}
               className="px-3 py-2 text-sm cursor-pointer transition-colors duration-150
                 text-admin-text 
                 hover:bg-admin-light hover:text-admin-primary
                 border-b border-admin-border/50 last:border-0"
-              onClick={() => handleSelect(opt)}
             >
               {opt}
             </li>

@@ -20,7 +20,6 @@ export const getUserSummaryController = async (req: AuthenticatedRequest, res: R
 
     // Use the authenticated user's ID
     const summaryData = await getUserSummaryByUserId(req.user.userId);
-    console.log(summaryData);
 
     if (!summaryData) {
       res.status(404).json({

@@ -14,11 +14,17 @@ export default function AssetPage() {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
     return () => clearTimeout(handler);
   }, [searchText]);
+
+  const refreshTable = () => {
+    assetsQuery.refetch();
+    setRefreshKey((prev) => prev + 1);
+  };
 
   useEffect(() => setPage(1), [debouncedSearchText]);
 
@@ -52,6 +58,7 @@ export default function AssetPage() {
         handleToast("Asset created successfully!", "success");
         closeModal();
         assetsQuery.refetch();
+        refreshTable();
       },
     });
   };
@@ -66,6 +73,7 @@ export default function AssetPage() {
           handleToast("Asset updated successfully!", "success");
           closeModal();
           assetsQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -78,6 +86,7 @@ export default function AssetPage() {
         handleToast("Asset deleted successfully!", "success");
         closeModal();
         assetsQuery.refetch();
+        refreshTable();
       },
     });
   };
@@ -121,7 +130,7 @@ export default function AssetPage() {
 
       <DataTable<Asset>
         key={debouncedSearchText}
-        resetTrigger={debouncedSearchText}
+        resetTrigger={`${debouncedSearchText}-${refreshKey}`}
         fetchPage={fetchPage}
         columns={columns}
         pageSizes={[5, 10, 20]}

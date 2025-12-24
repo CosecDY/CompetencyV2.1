@@ -14,12 +14,16 @@ export default function OperationPage() {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearchText(searchText), 500);
     return () => clearTimeout(handler);
   }, [searchText]);
-
+  const refreshTable = () => {
+    operationsQuery.refetch();
+    setRefreshKey((prev) => prev + 1);
+  };
   useEffect(() => setPage(1), [debouncedSearchText]);
 
   const handleToast = (message: string, type: "success" | "error" | "info" = "info") => {
@@ -53,6 +57,7 @@ export default function OperationPage() {
           handleToast("Operation created successfully!", "success");
           closeModal();
           operationsQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -67,6 +72,7 @@ export default function OperationPage() {
           handleToast("Operation updated successfully!", "success");
           closeModal();
           operationsQuery.refetch();
+          refreshTable();
         },
       }
     );
@@ -79,6 +85,7 @@ export default function OperationPage() {
         handleToast("Operation deleted successfully!", "success");
         closeModal();
         operationsQuery.refetch();
+        refreshTable();
       },
     });
   };
@@ -111,8 +118,11 @@ export default function OperationPage() {
         <h1 className="mb-2 text-3xl font-Poppins sm:mb-0">Operations</h1>
         <div className="flex flex-col items-end space-y-2">
           <Button size="md" onClick={openAddModal} className="flex items-center">
-            <FiPlus className="mr-2" /> Add Operation
+            <div className="flex items-center">
+              <FiPlus className="mr-2" /> Add Operation
+            </div>
           </Button>
+
           <div className="relative">
             <Input type="text" placeholder="Search operations..." className="py-1 pl-3 text-sm pr-30" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
             <FiSearch className="absolute text-gray-400 -translate-y-1/2 right-2 top-1/2" />
@@ -122,7 +132,7 @@ export default function OperationPage() {
 
       <DataTable<Operation>
         key={debouncedSearchText}
-        resetTrigger={debouncedSearchText}
+        resetTrigger={`${debouncedSearchText}-${refreshKey}`}
         fetchPage={fetchPage}
         columns={columns}
         pageSizes={[5, 10, 20]}

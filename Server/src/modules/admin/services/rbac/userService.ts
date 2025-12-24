@@ -66,13 +66,22 @@ export class UserService extends BaseService<User, keyof User> {
     return { data: dataWithStatus, total };
   }
 
-  async searchUsersByEmail(email: string, limit = 10): Promise<User[]> {
+  async searchUsersByEmail(email: string, limit = 10): Promise<any[]> {
     if (!email.trim()) return [];
-    const query = email.trim().toLowerCase();
-    const users = await this.repo.findMany({
-      where: { email: { contains: query } },
+    const query = email.trim();
+
+    return await this.repo.findMany({
+      where: {
+        email: { contains: query },
+      },
       take: limit,
+      include: {
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
-    return users.filter((u: User) => u.email.toLowerCase().includes(query));
   }
 }

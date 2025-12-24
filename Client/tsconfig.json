@@ -21,7 +21,8 @@
       "@Pages/*": ["pages/*"],
       "@Types/*": ["types/*"],
       "@Layouts/*": ["layouts/*"],
-      "@Utils/*": ["utils/*"]
+      "@Utils/*": ["utils/*"],
+      "@Constants/*": ["constants/*"]
     },
     // — emit & build info —
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
