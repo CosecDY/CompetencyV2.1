@@ -103,11 +103,7 @@ export default function InformationPage() {
           const status = row.original.approvalStatus ?? "—";
           const base = "inline-flex items-center px-2 py-1 text-xs font-medium rounded-full";
           const color =
-            status === InformationApprovalStatus.APPROVED
-              ? " bg-green-100 text-green-800"
-              : status === InformationApprovalStatus.NOT_APPROVED
-              ? " bg-red-100 text-red-800"
-              : " bg-gray-100 text-gray-800";
+            status === InformationApprovalStatus.APPROVED ? " bg-green-100 text-green-800" : status === InformationApprovalStatus.PENDING ? " bg-red-100 text-red-800" : " bg-gray-100 text-gray-800";
           return <span className={base + color}>{String(status)}</span>;
         },
       },

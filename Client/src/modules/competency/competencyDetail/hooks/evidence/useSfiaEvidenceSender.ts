@@ -27,35 +27,30 @@ export const useSfiaEvidenceSender = () => {
    * Initialize urls from external data
    * input shape: { [subSkillId]: { url: string, approvalStatus: string | null } }
    */
-  const initializeEvidenceUrls = useCallback(
-    (data: {
-      [subSkillId: number]: { url: string; approvalStatus: string | null };
-    }) => {
-      setEvidenceState((prev) => {
-        const nextUrls = { ...prev.urls };
-        const nextSubmitted = { ...prev.submitted };
-        const nextApproval = { ...prev.approvalStatus };
+  const initializeEvidenceUrls = useCallback((data: { [subSkillId: number]: { url: string; approvalStatus: string | null } }) => {
+    setEvidenceState((prev) => {
+      const nextUrls = { ...prev.urls };
+      const nextSubmitted = { ...prev.submitted };
+      const nextApproval = { ...prev.approvalStatus };
 
-        Object.entries(data).forEach(([k, v]) => {
-          const id = k.toString();
-          nextUrls[id] = {
-            evidenceUrl: v.url ?? "",
-            approvalStatus: v.approvalStatus ?? null,
-          };
-          nextSubmitted[id] = !!v.url;
-          nextApproval[id] = v.approvalStatus ?? null;
-        });
-
-        return {
-          ...prev,
-          urls: nextUrls,
-          submitted: nextSubmitted,
-          approvalStatus: nextApproval,
+      Object.entries(data).forEach(([k, v]) => {
+        const id = k.toString();
+        nextUrls[id] = {
+          evidenceUrl: v.url ?? "",
+          approvalStatus: v.approvalStatus ?? null,
         };
+        nextSubmitted[id] = !!v.url;
+        nextApproval[id] = v.approvalStatus ?? null;
       });
-    },
-    []
-  );
+
+      return {
+        ...prev,
+        urls: nextUrls,
+        submitted: nextSubmitted,
+        approvalStatus: nextApproval,
+      };
+    });
+  }, []);
 
   const handleUrlChange = useCallback((id: number, value: string) => {
     const idStr = id.toString();
@@ -145,13 +140,13 @@ export const useSfiaEvidenceSender = () => {
               submitted: { ...prev.submitted, [idStr]: true },
               approvalStatus: {
                 ...prev.approvalStatus,
-                [idStr]: "NOT_APPROVED",
+                [idStr]: "PENDING",
               },
               urls: {
                 ...prev.urls,
                 [idStr]: {
                   evidenceUrl: evidenceUrl.trim(),
-                  approvalStatus: "NOT_APPROVED",
+                  approvalStatus: "PENDING",
                 },
               },
               errors: { ...prev.errors, [idStr]: "" },
@@ -167,10 +162,7 @@ export const useSfiaEvidenceSender = () => {
           }
         });
       } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to submit evidence. Please try again.";
+        const errorMessage = error instanceof Error ? error.message : "Failed to submit evidence. Please try again.";
 
         setEvidenceState((prev) => ({
           ...prev,
@@ -225,10 +217,7 @@ export const useSfiaEvidenceSender = () => {
         if (err instanceof Error) msg = err.message;
         else if ((err as AxiosError).isAxiosError) {
           const a = err as AxiosError;
-          msg =
-            (a.response?.data as { message?: string })?.message ??
-            a.message ??
-            msg;
+          msg = (a.response?.data as { message?: string })?.message ?? a.message ?? msg;
         }
 
         setEvidenceState((prev) => ({

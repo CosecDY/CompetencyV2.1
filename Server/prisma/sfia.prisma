@@ -74,14 +74,14 @@ model SubSkill {
 }
 
 model Information {
-  id             Int                       @id @default(autoincrement())
-  text           String?                   @db.VarChar(255)
+  id             Int                        @id @default(autoincrement())
+  text           String?                    @db.VarChar(255)
   subSkillId     Int?
-  userId         String                    @db.Char(36)
-  createdAt      DateTime                  @default(now())
-  approvalStatus InformationApprovalStatus @default(NOT_APPROVED)
-  evidenceUrl    String?                   @db.VarChar(1000)
-  subSkill       SubSkill?                 @relation(fields: [subSkillId], references: [id])
+  userId         String                     @db.Char(36)
+  createdAt      DateTime                   @default(now())
+  approvalStatus Information_approvalStatus @default(PENDING)
+  evidenceUrl    String?                    @db.VarChar(1000)
+  subSkill       SubSkill?                  @relation(fields: [subSkillId], references: [id])
 
   @@index([subSkillId], map: "Information_subSkillId_fkey")
   @@index([userId])
@@ -100,7 +100,8 @@ model SfiaSummary {
   @@index([skillCode], map: "SfiaSummary_skillCode_fkey")
 }
 
-enum InformationApprovalStatus {
+enum Information_approvalStatus {
+  PENDING
   APPROVED
-  NOT_APPROVED
+  REJECTED
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { postTpqiEvidenceController } from "../controllers/postEvidenceController";
+// import { postTpqiEvidenceController } from "../controllers/postEvidenceController";
 import { getTpqiEvidenceController } from "../controllers/getEvidenceController";
 import { authenticate } from "@/middlewares/authMiddleware";
 import { delEvidenceController } from "../controllers/delEvidenceController";
@@ -15,7 +15,7 @@ router.get("/", (req, res) => {
 // example route: /api/tpqi/evidence
 // permission: protected
 // body: { "skillId": "string", "knowledgeId": "string"
-router.post("/", authenticate, postTpqiEvidenceController);
+// router.post("/", authenticate, postTpqiEvidenceController);
 
 // example route: /api/tpqi/evidence/get
 // permission: protected

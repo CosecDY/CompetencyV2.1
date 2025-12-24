@@ -4,7 +4,7 @@ import { CompetencyController } from "@Competency/controllers/competencyControll
 import searchCompetencyRoutes from "@Competency/routes/searchCompetencyRoutes";
 import profileRoutes from "./profileRoutes";
 import portfolioRoutes from "./portfolioRoutes";
-import { authenticate } from "@Middlewares/authMiddleware";
+import { authenticate, optionalAuthenticate } from "@Middlewares/authMiddleware";
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -17,7 +17,7 @@ router.use("/portfolio", portfolioRoutes);
 router.use("/", profileRoutes);
 
 router.get("/searchCareer", CompetencyController.search);
-router.get("/detail", CompetencyController.getDetail);
+router.get("/detail", optionalAuthenticate, CompetencyController.getDetail);
 router.post("/evidence", authenticate, CompetencyController.saveEvidence);
 router.delete("/evidence", authenticate, CompetencyController.deleteEvidence);
 

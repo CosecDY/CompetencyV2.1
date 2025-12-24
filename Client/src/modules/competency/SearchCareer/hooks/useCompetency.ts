@@ -1,31 +1,68 @@
-import { useState, useCallback } from "react";
-import { CompetencyService, CompetencySearchResult, CompetencyDetail, SaveEvidenceRequest } from "../services/competencyService";
+import { useState, useCallback, useRef } from "react";
+import { CompetencyService, CompetencySearchResult, CompetencyDetail, SaveEvidenceRequest, DeleteEvidenceRequest } from "../services/competencyService";
 
 const service = new CompetencyService();
+
+// Helper function เพื่อดึง Error Message อย่างปลอดภัย
+const extractErrorMessage = (err: unknown, defaultMessage: string): string => {
+  if (err instanceof Error) {
+    if (err.name === "AbortError") return "";
+    return err.message;
+  }
+  if (typeof err === "string") {
+    return err;
+  }
+  return defaultMessage;
+};
 
 export function useCompetency() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   // -----------------------------------------------------
-  // 1. Hook สำหรับค้นหา (Search)
+  // 1. Hook สำหรับค้นหา (Search) - เพิ่ม Abort Logic
   // -----------------------------------------------------
   const searchCompetency = useCallback(async (keyword: string): Promise<CompetencySearchResult[]> => {
+    // 1. ยกเลิก Request ก่อนหน้า (ถ้ามี)
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort();
+    }
+
+    // 2. สร้าง Controller ใหม่สำหรับรอบนี้
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+
     setLoading(true);
     setError(null);
+
     try {
-      const result = await service.search(keyword);
+      // หมายเหตุ: ถ้าใน service.search รองรับ signal ให้ส่ง { signal: controller.signal } ไปด้วยจะดีที่สุด
+      // แต่ถ้าไม่รองรับ Logic นี้ก็ยังช่วยกันผลลัพธ์เก่าทับใหม่ที่หน้าจอได้อยู่ครับ
+      const result = await service.search(keyword /*, { signal: controller.signal } */);
+
       return result;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // ถ้า Error เกิดจากการ Abort (ยกเลิก) เราจะไม่นับว่าเป็น Error จริง
+      if (err instanceof Error && err.name === "AbortError") {
+        return [];
+      }
+
+      const msg = extractErrorMessage(err, "เกิดข้อผิดพลาดในการค้นหาข้อมูล กรุณาลองใหม่อีกครั้ง");
       console.error("[useCompetency] Search Error:", err);
-      setError("เกิดข้อผิดพลาดในการค้นหาข้อมูล กรุณาลองใหม่อีกครั้ง");
+      setError(msg);
       return [];
     } finally {
-      setLoading(false);
+      // เช็คว่า Controller ปัจจุบันยังเป็นตัวเดียวกับที่สั่งงานไหม
+      // เพื่อป้องกันการปิด Loading ในขณะที่ Request ใหม่กำลังทำงานอยู่
+      if (searchAbortRef.current === controller) {
+        setLoading(false);
+        searchAbortRef.current = null;
+      }
     }
   }, []);
 
@@ -38,9 +75,10 @@ export function useCompetency() {
     try {
       const result = await service.getDetail(source, id, level);
       return result;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = extractErrorMessage(err, "ไม่สามารถโหลดรายละเอียดข้อมูลได้");
       console.error("[useCompetency] Detail Error:", err);
-      setError("ไม่สามารถโหลดรายละเอียดข้อมูลได้");
+      setError(msg);
       return null;
     } finally {
       setLoading(false);
@@ -56,10 +94,29 @@ export function useCompetency() {
     try {
       const success = await service.saveEvidence(data);
       return success;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = extractErrorMessage(err, "บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
       console.error("[useCompetency] Save Error:", err);
-      const errorMessage = err instanceof Error ? err.message : "บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
-      setError(errorMessage);
+      setError(msg);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // -----------------------------------------------------
+  // 4. Hook สำหรับลบหลักฐาน (Delete Evidence)
+  // -----------------------------------------------------
+  const deleteEvidence = useCallback(async (data: DeleteEvidenceRequest): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const success = await service.deleteEvidence(data);
+      return success;
+    } catch (err: unknown) {
+      const msg = extractErrorMessage(err, "ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      console.error("[useCompetency] Delete Error:", err);
+      setError(msg);
       return false;
     } finally {
       setLoading(false);
@@ -73,5 +130,6 @@ export function useCompetency() {
     searchCompetency,
     getCompetencyDetail,
     saveEvidence,
+    deleteEvidence,
   };
 }

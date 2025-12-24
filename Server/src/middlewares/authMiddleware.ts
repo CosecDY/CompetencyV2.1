@@ -102,6 +102,69 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+export const optionalAuthenticate = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : req.cookies?.accessToken;
+
+    if (!token) {
+      return next();
+    }
+
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch (err) {
+      return next();
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: String(payload.userId) },
+      select: {
+        id: true,
+        email: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: {
+                        asset: { select: { tableName: true } },
+                        operation: { select: { name: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (user) {
+      const permissions = user.userRoles.flatMap((ur) => ur.role?.rolePermissions?.map((rp) => `${rp.permission.asset.tableName}:${rp.permission.operation.name}`) || []);
+
+      const uniquePermissions = Array.from(new Set(permissions));
+      const roles = user.userRoles.map((ur) => ur.role?.name).filter(Boolean) as string[];
+
+      (req as AuthenticatedRequest).user = {
+        userId: user.id,
+        email: user.email,
+        roles,
+        permissions: uniquePermissions,
+      };
+    }
+
+    next();
+  } catch (err) {
+    console.error("Optional Auth Error:", err);
+    next();
+  }
+};
+
 export const authorizeRole = (allowedRoles: string | string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });

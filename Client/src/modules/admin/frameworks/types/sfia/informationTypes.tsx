@@ -1,7 +1,7 @@
 // ---- enums stay the same ----
 export enum InformationApprovalStatus {
   APPROVED = "APPROVED",
-  NOT_APPROVED = "NOT_APPROVED",
+  PENDING = "PENDING",
 }
 
 export interface InformationUser {

@@ -4,7 +4,7 @@ export enum EvidenceStatus {
   DELETING = "deleting",
   ERROR = "error",
   APPROVED = "approved",
-  REJECTED = "rejected", 
+  REJECTED = "rejected",
   PENDING = "pending",
   READY_TO_SUBMIT = "ready-to-submit",
   NOT_STARTED = "not-started",
@@ -13,7 +13,7 @@ export enum EvidenceStatus {
 export enum ApprovalStatus {
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
-  NOT_APPROVED = "NOT_APPROVED",
+  PENDING = "PENDING",
 }
 
 export interface StatusConfig {
@@ -23,15 +23,7 @@ export interface StatusConfig {
 }
 
 // Utility function to determine status
-export const getEvidenceStatus = (
-  evidenceLoading: boolean,
-  loading: boolean,
-  error: string,
-  url: string,
-  submitted: boolean,
-  approvalStatus?: string | null,
-  deleting?: boolean
-): EvidenceStatus => {
+export const getEvidenceStatus = (evidenceLoading: boolean, loading: boolean, error: string, url: string, submitted: boolean, approvalStatus?: string | null, deleting?: boolean): EvidenceStatus => {
   if (deleting) return EvidenceStatus.DELETING;
   if (evidenceLoading) return EvidenceStatus.LOADING;
   if (loading) return EvidenceStatus.LOADING;
@@ -39,21 +31,21 @@ export const getEvidenceStatus = (
 
   if (submitted) {
     // Normalize approval status for comparison (case-insensitive)
-    const normalizedStatus = approvalStatus?.toUpperCase?.() || '';
-    
+    const normalizedStatus = approvalStatus?.toUpperCase?.() || "";
+
     switch (normalizedStatus) {
       case ApprovalStatus.APPROVED:
-      case 'APPROVE':
-      case 'ACCEPTED':
+      case "APPROVE":
+      case "ACCEPTED":
         return EvidenceStatus.APPROVED;
       case ApprovalStatus.REJECTED:
-      case 'REJECT':
-      case 'DECLINED':
+      case "REJECT":
+      case "DECLINED":
         return EvidenceStatus.REJECTED;
-      case ApprovalStatus.NOT_APPROVED:
-      case 'PENDING':
-      case 'WAITING':
-      case '':
+      case ApprovalStatus.PENDING:
+      case "PENDING":
+      case "WAITING":
+      case "":
       case null:
       case undefined:
         return EvidenceStatus.PENDING;

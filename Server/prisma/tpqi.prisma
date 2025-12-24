@@ -40,9 +40,9 @@ model Level {
 
 model CareerLevelDetail {
   id            Int         @id @default(autoincrement())
-  detailsId     Int
   description   String      @db.VarChar(1200)
   careerLevelId Int
+  detailsId     Int
   careerLevel   CareerLevel @relation(fields: [careerLevelId], references: [id])
 
   @@unique([detailsId, careerLevelId])
@@ -86,15 +86,13 @@ model Knowledge {
   id                   Int                    @id @default(autoincrement())
   name                 String                 @db.VarChar(255)
   careerLevelKnowledge CareerLevelKnowledge[]
-  UnitKnowledge        UnitKnowledge[]
   userKnowledge        UserKnowledge[]
 }
 
 model Skill {
-  id                Int                @id @default(autoincrement())
   name              String             @db.VarChar(255)
+  id                Int                @id @default(autoincrement())
   careerLevelSkills CareerLevelSkill[]
-  UnitSkill         UnitSkill[]
   userSkills        UserSkill[]
 }
 
@@ -111,27 +109,27 @@ model UnitCode {
 }
 
 model UserKnowledge {
-  id             Int            @id @default(autoincrement())
+  id             Int                          @id @default(autoincrement())
   knowledgeId    Int
-  userId         String         @db.VarChar(255)
-  evidenceUrl    String?        @db.VarChar(1000)
-  approvalStatus ApprovalStatus @default(NOT_APPROVED)
-  knowledge      Knowledge      @relation(fields: [knowledgeId], references: [id])
+  userId         String?                      @db.VarChar(255)
+  evidenceUrl    String?                      @db.VarChar(1000)
+  approvalStatus UserKnowledge_approvalStatus @default(PENDING)
+  knowledge      Knowledge                    @relation(fields: [knowledgeId], references: [id])
 
   @@index([knowledgeId], map: "UserKnowledge_knowledgeId_fkey")
-  @@index([userId])
+  @@index([userId], map: "UserKnowledge_userEmail_idx")
 }
 
 model UserSkill {
-  id             Int            @id @default(autoincrement())
+  id             Int                      @id @default(autoincrement())
   skillId        Int
-  userId         String         @db.VarChar(255)
-  evidenceUrl    String?        @db.VarChar(1000)
-  approvalStatus ApprovalStatus @default(NOT_APPROVED)
-  skill          Skill          @relation(fields: [skillId], references: [id])
+  userId         String?                  @db.VarChar(255)
+  evidenceUrl    String?                  @db.VarChar(1000)
+  approvalStatus UserSkill_approvalStatus @default(PENDING)
+  skill          Skill                    @relation(fields: [skillId], references: [id])
 
   @@index([skillId], map: "UserSkill_skillId_fkey")
-  @@index([userId])
+  @@index([userId], map: "UserSkill_userEmail_idx")
 }
 
 model Occupational {
@@ -188,28 +186,31 @@ model TpqiSummary {
 }
 
 model UnitKnowledge {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   unitCodeId  Int
   knowledgeId Int
-  Knowledge   Knowledge @relation(fields: [knowledgeId], references: [id], onDelete: Cascade, map: "FK_UserUnitKnowledge_Knowledge")
-  UnitCode    UnitCode  @relation(fields: [unitCodeId], references: [id], map: "UserUnitKnowledge_unitCodeId_fkey")
+  UnitCode    UnitCode @relation(fields: [unitCodeId], references: [id], map: "UserUnitKnowledge_unitCodeId_fkey")
 
   @@index([unitCodeId], map: "UserUnitKnowledge_unitCodeId_fkey")
-  @@index([knowledgeId], map: "FK_UserUnitKnowledge_Knowledge")
 }
 
 model UnitSkill {
   id         Int      @id @default(autoincrement())
   unitCodeId Int
   skillId    Int
-  Skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade, map: "FK_UserUnitSkill_Skill")
   UnitCode   UnitCode @relation(fields: [unitCodeId], references: [id], map: "UserUnitSkill_unitCodeId_fkey")
 
   @@index([unitCodeId], map: "UserUnitSkill_unitCodeId_fkey")
-  @@index([skillId], map: "FK_UserUnitSkill_Skill")
 }
 
-enum ApprovalStatus {
+enum UserKnowledge_approvalStatus {
+  PENDING
   APPROVED
-  NOT_APPROVED
+  REJECTED
+}
+
+enum UserSkill_approvalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

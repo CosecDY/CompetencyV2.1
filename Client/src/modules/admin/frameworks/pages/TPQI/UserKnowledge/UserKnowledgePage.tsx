@@ -89,7 +89,7 @@ export default function UserKnowledgePage() {
           const status = row.original.approvalStatus ?? "—";
           const base = "inline-flex items-center px-2 py-1 text-xs font-medium rounded-full";
           const color =
-            status === KnowledgeApprovalStatus.APPROVED ? " bg-green-100 text-green-800" : status === KnowledgeApprovalStatus.NOT_APPROVED ? " bg-red-100 text-red-800" : " bg-gray-100 text-gray-800";
+            status === KnowledgeApprovalStatus.APPROVED ? " bg-green-100 text-green-800" : status === KnowledgeApprovalStatus.PENDING ? " bg-red-100 text-red-800" : " bg-gray-100 text-gray-800";
           return <span className={base + color}>{status}</span>;
         },
       },

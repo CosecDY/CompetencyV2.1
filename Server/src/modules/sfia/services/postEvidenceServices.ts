@@ -1,5 +1,5 @@
 import { prismaSfia } from "../../../db/prismaClients";
-import { InformationApprovalStatus } from "@prisma/client_sfia";
+import { Information_approvalStatus } from "@prisma/client_sfia";
 
 export interface CreateEvidenceRequest {
   userId: string;
@@ -11,7 +11,7 @@ export interface EvidenceResponse {
   id: number;
   text: string | null;
   evidenceUrl: string | null;
-  approved: InformationApprovalStatus;
+  approved: Information_approvalStatus;
   createdAt: Date;
   subSkillId: number;
   userId: string;
@@ -70,7 +70,7 @@ export async function createSubSkillEvidence(evidenceData: CreateEvidenceRequest
       evidenceUrl: evidenceData.evidenceUrl.trim(),
       subSkillId: evidenceData.subSkillId,
       userId: evidenceData.userId,
-      approvalStatus: InformationApprovalStatus.NOT_APPROVED,
+      approvalStatus: Information_approvalStatus.PENDING,
     },
   });
 

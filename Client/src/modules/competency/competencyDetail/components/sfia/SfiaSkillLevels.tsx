@@ -255,7 +255,7 @@ const SubSkillsSection: React.FC<SubSkillsSectionProps> = memo(({ subskills, ski
               subskill={subskill}
               skillCode={skillCode}
               url={typeof evidenceUrl === "string" ? evidenceUrl : evidenceUrl?.evidenceUrl || ""}
-              approvalStatus={evidenceUrl?.approvalStatus || "NOT_APPROVED"}
+              approvalStatus={evidenceUrl?.approvalStatus || "PENDING"}
               submitted={evidenceState.submitted[idStr] || false}
               loading={evidenceState.loading[idStr] || false}
               deleting={evidenceState.deleting[idStr] || false}

@@ -1,11 +1,8 @@
-import { PrismaClient, Prisma } from "@prisma/client_competency";
+import { PrismaClient } from "@prisma/client_competency";
 import { generateToken, generateRefreshToken, generateCsrfToken, verifyRefreshToken } from "@Utils/tokenUtils";
 import { OAuth2Client } from "google-auth-library";
-import { SessionService } from "@/modules/admin/services/rbac/sessionService";
 
 const prisma = new PrismaClient();
-
-const sessionService = new SessionService();
 const DEFAULT_USER_ROLE = process.env.DEFAULT_USER_ROLE || "User";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 

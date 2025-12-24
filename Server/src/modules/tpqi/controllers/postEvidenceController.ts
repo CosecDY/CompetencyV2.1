@@ -1,10 +1,10 @@
 import { Response, NextFunction } from "express";
 import { URL } from "url";
 import { isIP } from "net";
-import {
-  createTpqiEvidence,
-  CreateTpqiEvidenceRequest,
-} from "../services/postEvidenceService";
+// import {
+//   createTpqiEvidence,
+//   CreateTpqiEvidenceRequest,
+// } from "../services/postEvidenceService";
 import { AuthenticatedRequest } from "../../../middlewares/authMiddleware";
 
 /**
@@ -74,14 +74,7 @@ const isValidAndSafeUrl = (url: string): boolean => {
     }
 
     // Block common internal domain patterns
-    const internalPatterns = [
-      /\.local$/,
-      /\.internal$/,
-      /\.corp$/,
-      /\.lan$/,
-      /\.intranet$/,
-      /\.private$/,
-    ];
+    const internalPatterns = [/\.local$/, /\.internal$/, /\.corp$/, /\.lan$/, /\.intranet$/, /\.private$/];
 
     if (internalPatterns.some((pattern) => pattern.test(hostname))) {
       return false;
@@ -92,10 +85,7 @@ const isValidAndSafeUrl = (url: string): boolean => {
     if (port) {
       const portNum = parseInt(port, 10);
       // Block common internal service ports
-      const blockedPorts = [
-        22, 23, 25, 53, 135, 139, 445, 993, 995, 1433, 1521, 3306, 3389, 5432,
-        5984, 6379, 8080, 8443, 9200, 9300, 11211, 27017, 50070,
-      ];
+      const blockedPorts = [22, 23, 25, 53, 135, 139, 445, 993, 995, 1433, 1521, 3306, 3389, 5432, 5984, 6379, 8080, 8443, 9200, 9300, 11211, 27017, 50070];
       if (blockedPorts.includes(portNum)) {
         return false;
       }
@@ -120,20 +110,14 @@ const validateUrlFormatOnly = (url: string): boolean => {
 /**
  * Helper to validate skillId and knowledgeId
  */
-function validateSkillOrKnowledge(
-  skillId: any,
-  knowledgeId: any
-): string | null {
+function validateSkillOrKnowledge(skillId: any, knowledgeId: any): string | null {
   if (!skillId && !knowledgeId) {
     return "Either skillId or knowledgeId must be provided.";
   }
   if (skillId !== undefined && (!Number.isInteger(skillId) || skillId <= 0)) {
     return "skillId must be a positive integer if provided.";
   }
-  if (
-    knowledgeId !== undefined &&
-    (!Number.isInteger(knowledgeId) || knowledgeId <= 0)
-  ) {
+  if (knowledgeId !== undefined && (!Number.isInteger(knowledgeId) || knowledgeId <= 0)) {
     return "knowledgeId must be a positive integer if provided.";
   }
   return null;
@@ -159,8 +143,7 @@ function validateEvidenceUrl(evidenceUrl: any): {
 
   if (!validateUrlFormatOnly(trimmedUrl)) {
     return {
-      error:
-        "Evidence URL must be a valid, publicly accessible HTTP or HTTPS URL.",
+      error: "Evidence URL must be a valid, publicly accessible HTTP or HTTPS URL.",
     };
   }
 
@@ -171,101 +154,87 @@ function validateEvidenceUrl(evidenceUrl: any): {
  * Controller to handle POST /tpqi/evidence
  * Creates new evidence for a user's skill or knowledge in TPQI
  */
-export const postTpqiEvidenceController = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    // Use userId from authentication middleware, not from body
-    if (!req.user?.userId) {
-      res
-        .status(401)
-        .json({ success: false, message: "Authentication required." });
-      return;
-    }
+// export const postTpqiEvidenceController = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+//   try {
+//     // Use userId from authentication middleware, not from body
+//     if (!req.user?.userId) {
+//       res.status(401).json({ success: false, message: "Authentication required." });
+//       return;
+//     }
 
-    const { skillId, knowledgeId, evidenceUrl } = req.body as Omit<
-      CreateTpqiEvidenceRequest,
-      "userId"
-    >;
+//     const { skillId, knowledgeId, evidenceUrl } = req.body as Omit<CreateTpqiEvidenceRequest, "userId">;
 
-    // Validate skillId and knowledgeId
-    const skillOrKnowledgeError = validateSkillOrKnowledge(
-      skillId,
-      knowledgeId
-    );
-    if (skillOrKnowledgeError) {
-      res.status(400).json({ success: false, message: skillOrKnowledgeError });
-      return;
-    }
+//     // Validate skillId and knowledgeId
+//     const skillOrKnowledgeError = validateSkillOrKnowledge(skillId, knowledgeId);
+//     if (skillOrKnowledgeError) {
+//       res.status(400).json({ success: false, message: skillOrKnowledgeError });
+//       return;
+//     }
 
-    // Validate evidenceUrl if provided using secure format-only validation
-    let validatedEvidenceUrl: string | undefined;
-    const evidenceUrlResult = validateEvidenceUrl(evidenceUrl);
-    if (evidenceUrlResult.error) {
-      res
-        .status(400)
-        .json({ success: false, message: evidenceUrlResult.error });
-      return;
-    }
-    validatedEvidenceUrl = evidenceUrlResult.value;
+//     // Validate evidenceUrl if provided using secure format-only validation
+//     let validatedEvidenceUrl: string | undefined;
+//     const evidenceUrlResult = validateEvidenceUrl(evidenceUrl);
+//     if (evidenceUrlResult.error) {
+//       res.status(400).json({ success: false, message: evidenceUrlResult.error });
+//       return;
+//     }
+//     validatedEvidenceUrl = evidenceUrlResult.value;
 
-    // Call service to create evidence
-    const evidence = await createTpqiEvidence({
-      userId: req.user.userId,
-      skillId,
-      knowledgeId,
-      evidenceUrl: validatedEvidenceUrl,
-    });
+//     // Call service to create evidence
+//     const evidence = await createTpqiEvidence({
+//       userId: req.user.userId,
+//       skillId,
+//       knowledgeId,
+//       evidenceUrl: validatedEvidenceUrl,
+//     });
 
-    res.status(201).json({
-      success: true,
-      message: "Evidence created successfully.",
-      data: evidence,
-    });
-  } catch (error: any) {
-    console.error("Error in postTpqiEvidenceController:", error);
+//     res.status(201).json({
+//       success: true,
+//       message: "Evidence created successfully.",
+//       data: evidence,
+//     });
+//   } catch (error: any) {
+//     console.error("Error in postTpqiEvidenceController:", error);
 
-    // Handle known service errors
-    if (error.message?.includes("does not exist")) {
-      res.status(404).json({
-        success: false,
-        message: error.message,
-      });
-      return;
-    }
+//     // Handle known service errors
+//     if (error.message?.includes("does not exist")) {
+//       res.status(404).json({
+//         success: false,
+//         message: error.message,
+//       });
+//       return;
+//     }
 
-    // Handle Prisma errors
-    if (error.code === "P2002") {
-      res.status(409).json({
-        success: false,
-        message: "Evidence already exists for this skill or knowledge.",
-      });
-      return;
-    }
+//     // Handle Prisma errors
+//     if (error.code === "P2002") {
+//       res.status(409).json({
+//         success: false,
+//         message: "Evidence already exists for this skill or knowledge.",
+//       });
+//       return;
+//     }
 
-    if (error.code === "P2025") {
-      res.status(404).json({
-        success: false,
-        message: "Related record not found.",
-      });
-      return;
-    }
+//     if (error.code === "P2025") {
+//       res.status(404).json({
+//         success: false,
+//         message: "Related record not found.",
+//       });
+//       return;
+//     }
 
-    // Handle validation errors
-    if (error.name === "ValidationError") {
-      res.status(400).json({
-        success: false,
-        message: error.message,
-      });
-      return;
-    }
+//     // Handle validation errors
+//     if (error.name === "ValidationError") {
+//       res.status(400).json({
+//         success: false,
+//         message: error.message,
+//       });
+//       return;
+//     }
 
-    // Generic server error
-    res.status(500).json({
-      success: false,
-      message: "Internal server error. Please try again later.",
-    });
-  }
-};
+//     // Generic server error
+//     res.status(500).json({
+//       success: false,
+//       message: "Internal server error. Please try again later.",
+//     });
+//   }
+// };

@@ -17,8 +17,8 @@ const STATUS_META: Record<KnowledgeApprovalStatus, { label: string; desc: string
     badgeClass: "bg-green-100 text-green-800 border border-green-200",
     cardRing: "ring-2 ring-green-500/70",
   },
-  [KnowledgeApprovalStatus.NOT_APPROVED]: {
-    label: "NOT_APPROVED",
+  [KnowledgeApprovalStatus.PENDING]: {
+    label: "PENDING",
     desc: "ยังไม่ผ่านการตรวจสอบ หรือจำเป็นต้องแก้ไข",
     badgeClass: "bg-rose-100 text-rose-800 border border-rose-200",
     cardRing: "ring-2 ring-rose-500/70",

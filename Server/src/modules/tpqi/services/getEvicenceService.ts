@@ -1,5 +1,5 @@
 import { prismaTpqi } from "@/db/prismaClients";
-import { ApprovalStatus } from "@prisma/client_tpqi";
+import { UserKnowledge_approvalStatus } from "@prisma/client_tpqi";
 
 /**
  * Evidence information from skill or knowledge with associated URL.
@@ -13,7 +13,7 @@ import { ApprovalStatus } from "@prisma/client_tpqi";
 export interface EvidenceInfo {
   id: number;
   evidenceUrl: string | null;
-  approvalStatus: ApprovalStatus;
+  approvalStatus: UserKnowledge_approvalStatus;
   type: "skill" | "knowledge";
 }
 
@@ -72,10 +72,7 @@ export interface UnitCodeEvidenceCollection {
  *   console.log('Unit code not found or user has no evidence');
  * }
  */
-export async function getEvidenceByUnitCodeAndUser(
-  unitCode: string,
-  userId: string
-): Promise<UnitCodeEvidenceCollection | null> {
+export async function getEvidenceByUnitCodeAndUser(unitCode: string, userId: string): Promise<UnitCodeEvidenceCollection | null> {
   try {
     // Validate input parameters
     if (!unitCode || !userId) {
@@ -111,9 +108,7 @@ export async function getEvidenceByUnitCodeAndUser(
 
     // Extract skill and knowledge IDs
     const skillIds = unitCodeData.UnitSkill.map((link: { skillId: number }) => link.skillId);
-    const knowledgeIds = unitCodeData.UnitKnowledge.map(
-      (link: { knowledgeId: number }) => link.knowledgeId
-    );
+    const knowledgeIds = unitCodeData.UnitKnowledge.map((link: { knowledgeId: number }) => link.knowledgeId);
 
     // If no skills or knowledge found, return empty collection
     if (skillIds.length === 0 && knowledgeIds.length === 0) {
@@ -131,48 +126,48 @@ export async function getEvidenceByUnitCodeAndUser(
     const userSkillEvidences =
       skillIds.length > 0
         ? await Promise.all(
-          skillIds.map(async (skillId: number) => {
-            const latestEvidence = await prismaTpqi.userSkill.findFirst({
-              where: {
-                userId: userId,
-                skillId: skillId,
-              },
-              orderBy: {
-                id: "desc", // Get the latest evidence
-              },
-              select: {
-                skillId: true,
-                evidenceUrl: true,
-                approvalStatus: true,
-              },
-            });
-            return latestEvidence;
-          })
-        )
+            skillIds.map(async (skillId: number) => {
+              const latestEvidence = await prismaTpqi.userSkill.findFirst({
+                where: {
+                  userId: userId,
+                  skillId: skillId,
+                },
+                orderBy: {
+                  id: "desc", // Get the latest evidence
+                },
+                select: {
+                  skillId: true,
+                  evidenceUrl: true,
+                  approvalStatus: true,
+                },
+              });
+              return latestEvidence;
+            })
+          )
         : [];
 
     // Fetch user's knowledge evidences for this unit code (latest per knowledgeId)
     const userKnowledgeEvidences =
       knowledgeIds.length > 0
         ? await Promise.all(
-          knowledgeIds.map(async (knowledgeId: number) => {
-            const latestEvidence = await prismaTpqi.userKnowledge.findFirst({
-              where: {
-                userId: userId,
-                knowledgeId: knowledgeId,
-              },
-              orderBy: {
-                id: "desc", // Get the latest evidence
-              },
-              select: {
-                knowledgeId: true,
-                evidenceUrl: true,
-                approvalStatus: true,
-              },
-            });
-            return latestEvidence;
-          })
-        )
+            knowledgeIds.map(async (knowledgeId: number) => {
+              const latestEvidence = await prismaTpqi.userKnowledge.findFirst({
+                where: {
+                  userId: userId,
+                  knowledgeId: knowledgeId,
+                },
+                orderBy: {
+                  id: "desc", // Get the latest evidence
+                },
+                select: {
+                  knowledgeId: true,
+                  evidenceUrl: true,
+                  approvalStatus: true,
+                },
+              });
+              return latestEvidence;
+            })
+          )
         : [];
 
     // Transform skill evidences (filter out null results)
@@ -196,10 +191,7 @@ export async function getEvidenceByUnitCodeAndUser(
       }));
 
     // Combine all evidences
-    const evidences: EvidenceInfo[] = [
-      ...skillEvidences,
-      ...knowledgeEvidences,
-    ];
+    const evidences: EvidenceInfo[] = [...skillEvidences, ...knowledgeEvidences];
 
     return {
       unitCode,
@@ -211,9 +203,7 @@ export async function getEvidenceByUnitCodeAndUser(
     };
   } catch (error) {
     console.error("Error fetching evidence data:", error);
-    throw new Error(
-      `Failed to fetch evidence for unit code: ${unitCode} and user: ${userId}`
-    );
+    throw new Error(`Failed to fetch evidence for unit code: ${unitCode} and user: ${userId}`);
   }
 }
 
@@ -223,9 +213,6 @@ export async function getEvidenceByUnitCodeAndUser(
  * @deprecated Use getEvidenceByUnitCodeAndUser instead.
  * This function maintains backward compatibility but should be replaced in new code.
  */
-export async function getUnitCodeEvidenceServices(
-  unitCode: string,
-  userId: string
-): Promise<UnitCodeEvidenceCollection | null> {
+export async function getUnitCodeEvidenceServices(unitCode: string, userId: string): Promise<UnitCodeEvidenceCollection | null> {
   return getEvidenceByUnitCodeAndUser(unitCode, userId);
 }

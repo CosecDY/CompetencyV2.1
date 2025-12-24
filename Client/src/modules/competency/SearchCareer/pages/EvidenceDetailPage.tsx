@@ -1,6 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Link as LinkIcon, Save, CheckCircle, AlertCircle, FileText, ExternalLink, ChevronRight, Loader2, Lock } from "lucide-react";
+import {
+  ArrowLeft,
+  Link as LinkIcon,
+  Save,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  ExternalLink,
+  ChevronRight,
+  Loader2,
+  Lock,
+  Trash2,
+  BookOpen, // Icon สำหรับ Knowledge
+  Wrench, // Icon สำหรับ Skill/Performance
+} from "lucide-react";
 import { useCompetency } from "../hooks/useCompetency";
 import { CompetencyDetail, EvidenceItem } from "../services/competencyService";
 import { useAuth } from "@Contexts/AuthContext";
@@ -17,8 +31,10 @@ export default function EvidenceDetailPage() {
   const id = searchParams.get("id");
   const level = searchParams.get("level");
 
-  const { getCompetencyDetail, saveEvidence, loading: dataLoading, error } = useCompetency();
+  const { getCompetencyDetail, saveEvidence, deleteEvidence, loading: globalLoading, error } = useCompetency();
+
   const [data, setData] = useState<CompetencyDetail | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (source && id && level) {
@@ -32,33 +48,123 @@ export default function EvidenceDetailPage() {
     }
   }, [source, id, level, getCompetencyDetail]);
 
+  // -------------------------------------------------------
+  // [UPDATED] Handle Save: เพิ่ม Logic เช็ค TPQI Type
+  // -------------------------------------------------------
   const handleSave = async (itemId: number, url: string) => {
-    if (!data || !source) return;
+    // [DEBUG 1] เช็คว่าฟังก์ชันถูกเรียกไหม
+    console.log("👉 1. Handle Save Triggered");
+    console.log("   - ItemID:", itemId, typeof itemId);
+    console.log("   - URL:", url);
+    console.log("   - Source:", source);
+    console.log("   - IsAuthenticated:", isAuthenticated);
 
-    // Safety Check
+    if (!data || !source) {
+      console.error("❌ Fails: Data or Source is missing");
+      return;
+    }
+
     if (!isAuthenticated) {
+      console.error("❌ Fails: User not logged in");
       alert("กรุณาเข้าสู่ระบบก่อนบันทึกข้อมูล");
       return;
     }
 
-    const success = await saveEvidence({ source, itemId, url });
+    // [DEBUG 2] ลองหา Item
+    // ลองแก้เป็น i.itemId == itemId (ใช้ == เผื่อ type ไม่ตรง)
+    const targetItem = data.items.find((i) => i.itemId == itemId);
 
-    if (success) {
-      const updatedItems = data.items.map((item) => {
-        if (item.itemId === itemId) {
-          return {
-            ...item,
-            evidenceUrl: url,
-            status: "PENDING" as const,
-          };
-        }
-        return item;
+    console.log("👉 2. Target Item Found?:", targetItem);
+
+    if (!targetItem) {
+      console.error("❌ Fails: Item not found in data list (Check ID types)");
+      // ปริ้นท์ ID ของทุกตัวออกมาเทียบดู
+      console.log(
+        "   - Available IDs:",
+        data.items.map((i) => i.itemId)
+      );
+      return;
+    }
+
+    setActionLoadingId(itemId);
+
+    try {
+      const tpqiType = source === "TPQI" ? targetItem.type || "PERFORMANCE" : undefined;
+
+      console.log("👉 3. Preparing to call API with Type:", tpqiType);
+
+      const success = await saveEvidence({
+        source,
+        itemId,
+        url,
+        tpqiType: tpqiType as "KNOWLEDGE" | "SKILL" | undefined,
       });
-      setData({ ...data, items: updatedItems });
+
+      console.log("👉 4. API Result Success:", success);
+
+      if (success) {
+        const updatedItems = data.items.map((item) => {
+          if (item.itemId === itemId) {
+            return {
+              ...item,
+              evidenceUrl: url,
+              status: "PENDING" as const,
+            };
+          }
+          return item;
+        });
+        setData({ ...data, items: updatedItems });
+      }
+    } catch (err) {
+      console.error("❌ API Error:", err);
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
-  if ((dataLoading || authLoading) && !data) {
+  // -------------------------------------------------------
+  // [UPDATED] Handle Delete: เพิ่ม Logic เช็ค TPQI Type
+  // -------------------------------------------------------
+  const handleDelete = async (itemId: number) => {
+    if (!data || !source) return;
+    if (!isAuthenticated) return;
+    if (!window.confirm("คุณต้องการลบหลักฐานนี้ใช่หรือไม่?")) return;
+
+    // 1. หา Item เพื่อดู Type
+    const targetItem = data.items.find((i) => i.itemId === itemId);
+    if (!targetItem) return;
+
+    setActionLoadingId(itemId);
+
+    try {
+      // 2. เตรียม Payload ส่ง type ไปตอนลบด้วย
+      const tpqiType = source === "TPQI" ? targetItem.type || "PERFORMANCE" : undefined;
+
+      const success = await deleteEvidence({
+        source,
+        itemId,
+        tpqiType: tpqiType as "KNOWLEDGE" | "SKILL" | undefined,
+      });
+
+      if (success) {
+        const updatedItems = data.items.map((item) => {
+          if (item.itemId === itemId) {
+            return {
+              ...item,
+              evidenceUrl: null,
+              status: "EMPTY" as const,
+            };
+          }
+          return item;
+        });
+        setData({ ...data, items: updatedItems });
+      }
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  if ((globalLoading && !data && !error) || authLoading) {
     return (
       <div className="theme-competency min-h-screen flex flex-col items-center justify-center bg-background text-muted">
         <Loader2 className="animate-spin mb-4 text-primary" size={40} />
@@ -88,7 +194,6 @@ export default function EvidenceDetailPage() {
     <Layout>
       <WhiteTealBackground>
         <div className="theme-competency min-h-screen font-sans text-maintext pb-20">
-          {/* Guest Warning */}
           {!authLoading && !isAuthenticated && (
             <div className="bg-slate-800 text-white text-center py-2 text-sm px-4 relative z-30">
               <div className="flex items-center justify-center gap-2">
@@ -103,7 +208,7 @@ export default function EvidenceDetailPage() {
             </div>
           )}
 
-          {/* --- HEADER SECTION --- */}
+          {/* --- HEADER --- */}
           <div className="bg-surface/80 backdrop-blur-md border-b border-border sticky top-0 z-20 shadow-sm transition-colors duration-300">
             <div className="max-w-4xl mx-auto px-4 py-4">
               <div className="flex items-center justify-between mb-4">
@@ -136,7 +241,6 @@ export default function EvidenceDetailPage() {
                   <p className="text-muted text-sm mt-1">{data.category}</p>
                 </div>
 
-                {/* Progress Card */}
                 <div className="bg-background rounded-lg p-3 border border-border min-w-[180px] shadow-sm">
                   <div className="flex justify-between text-xs mb-2 font-medium text-muted">
                     <span>ความคืบหน้า</span>
@@ -152,9 +256,8 @@ export default function EvidenceDetailPage() {
             </div>
           </div>
 
-          {/* --- CONTENT SECTION --- */}
+          {/* --- CONTENT --- */}
           <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
-            {/* Description Box */}
             <div className="bg-surface p-6 rounded-xl border border-border shadow-sm mb-8">
               <h3 className="flex items-center gap-2 text-sm font-bold text-maintext mb-2 uppercase tracking-wide">
                 <FileText size={16} className="text-primary" />
@@ -169,7 +272,16 @@ export default function EvidenceDetailPage() {
               </h2>
 
               {data.items.map((item, index) => (
-                <EvidenceItemRow key={item.itemId} item={item} index={index} onSave={handleSave} loading={dataLoading} isAuthenticated={isAuthenticated} />
+                <EvidenceItemRow
+                  key={`${item.type}-${item.itemId}-${index}`}
+                  item={item}
+                  index={index}
+                  onSave={handleSave}
+                  onDelete={handleDelete}
+                  loading={actionLoadingId === item.itemId}
+                  isAuthenticated={isAuthenticated}
+                  source={source}
+                />
               ))}
             </div>
           </div>
@@ -179,17 +291,19 @@ export default function EvidenceDetailPage() {
   );
 }
 
-// --- SUB-COMPONENT: Item Row ---
+// --- SUB-COMPONENT ---
 
 interface EvidenceItemRowProps {
   item: EvidenceItem;
   index: number;
   onSave: (id: number, url: string) => void;
+  onDelete: (id: number) => void;
   loading: boolean;
   isAuthenticated: boolean;
+  source: "TPQI" | "SFIA" | null;
 }
 
-function EvidenceItemRow({ item, index, onSave, loading, isAuthenticated }: EvidenceItemRowProps) {
+function EvidenceItemRow({ item, index, onSave, onDelete, loading, isAuthenticated, source }: EvidenceItemRowProps) {
   const [url, setUrl] = useState(isAuthenticated ? item.evidenceUrl || "" : "");
   const [isFocused, setIsFocused] = useState(false);
 
@@ -203,6 +317,10 @@ function EvidenceItemRow({ item, index, onSave, loading, isAuthenticated }: Evid
 
   const isChanged = url !== (item.evidenceUrl || "");
   const isEmpty = url.trim() === "";
+  const isSaved = item.status !== "EMPTY" && item.evidenceUrl;
+
+  // [ADDED] Check Type for TPQI Badge
+  const isKnowledge = item.type === "KNOWLEDGE";
 
   return (
     <div
@@ -224,8 +342,21 @@ function EvidenceItemRow({ item, index, onSave, loading, isAuthenticated }: Evid
           </div>
 
           <div className="w-full">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[10px] font-mono text-muted/70">ID: {item.itemId}</span>
+
+              {/* [ADDED] Badge แสดงประเภท Knowledge vs Skill (เฉพาะ TPQI) */}
+              {source === "TPQI" && (
+                <span
+                  className={`text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded border ${
+                    isKnowledge ? "bg-purple-50 text-purple-600 border-purple-100" : "bg-indigo-50 text-indigo-600 border-indigo-100"
+                  }`}
+                >
+                  {isKnowledge ? <BookOpen size={10} /> : <Wrench size={10} />}
+                  {isKnowledge ? "KNOWLEDGE" : "SKILL"}
+                </span>
+              )}
+
               {item.status === "APPROVED" && (
                 <span className="text-[10px] font-bold text-green-600 flex items-center gap-0.5 bg-green-50 px-1.5 py-0.5 rounded">
                   <CheckCircle size={10} /> อนุมัติแล้ว
@@ -274,20 +405,32 @@ function EvidenceItemRow({ item, index, onSave, loading, isAuthenticated }: Evid
             )}
           </div>
 
-          <button
-            onClick={() => onSave(item.itemId, url)}
-            disabled={isEmpty || (!isChanged && item.status !== "EMPTY") || loading || !isAuthenticated}
-            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-w-[100px] ${
-              isAuthenticated && isChanged && !isEmpty ? "bg-primary hover:bg-primary-hover text-white shadow-md shadow-primary/20 translate-y-0" : "bg-slate-100 text-slate-400 cursor-not-allowed"
-            }`}
-          >
-            {loading && isChanged ? <Loader2 className="animate-spin" size={16} /> : !isAuthenticated ? <Lock size={16} /> : <Save size={16} />}
-            <span>{isAuthenticated ? "บันทึก" : "Login"}</span>
-          </button>
+          <div className="flex gap-2">
+            {isAuthenticated && isSaved && !isChanged && (
+              <button
+                onClick={() => onDelete(item.itemId)}
+                disabled={loading}
+                className="flex items-center justify-center px-3 py-2.5 rounded-lg text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
+                title="ลบข้อมูล"
+              >
+                {loading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+              </button>
+            )}
+
+            <button
+              onClick={() => onSave(item.itemId, url)}
+              disabled={isEmpty || (!isChanged && item.status !== "EMPTY") || loading || !isAuthenticated}
+              className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap min-w-[100px] ${
+                isAuthenticated && isChanged && !isEmpty ? "bg-primary hover:bg-primary-hover text-white shadow-md shadow-primary/20 translate-y-0" : "bg-slate-100 text-slate-400 cursor-not-allowed"
+              }`}
+            >
+              {loading && isChanged ? <Loader2 className="animate-spin" size={16} /> : !isAuthenticated ? <Lock size={16} /> : <Save size={16} />}
+              <span>{isAuthenticated ? "บันทึก" : "Login"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Side Color Strip */}
       <div
         className={`absolute top-4 bottom-4 left-0 w-1 rounded-r-full transition-colors ${
           item.status === "APPROVED" ? "bg-green-400" : item.status === "PENDING" ? "bg-yellow-400" : "bg-transparent"

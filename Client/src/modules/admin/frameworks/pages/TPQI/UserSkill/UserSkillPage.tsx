@@ -6,7 +6,7 @@ import { useUserSkillManager } from "modules/admin/frameworks/hooks/tpqi/useUser
 import { UserSkill, UpdateUserSkillDto } from "modules/admin/frameworks/types/tpqi/userSkillTypes";
 import { EditUserSkillStatusModal } from "./UserSkillModals";
 
-type Approval = "APPROVED" | "NOT_APPROVED";
+type Approval = "APPROVED" | "PENDING";
 
 export default function UserSkillPage() {
   const [searchText, setSearchText] = useState<string>("");
@@ -89,7 +89,7 @@ export default function UserSkillPage() {
         cell: ({ row }: { row: { original: UserSkill } }) => {
           const status = (row.original.approvalStatus ?? "—") as Approval | "—";
           const base = "inline-flex items-center px-2 py-1 text-xs font-medium rounded-full";
-          const color = status === "APPROVED" ? " bg-green-100 text-green-800" : status === "NOT_APPROVED" ? " bg-red-100 text-red-800" : " bg-gray-100 text-gray-800";
+          const color = status === "APPROVED" ? " bg-green-100 text-green-800" : status === "PENDING" ? " bg-red-100 text-red-800" : " bg-gray-100 text-gray-800";
           return <span className={base + color}>{status}</span>;
         },
       },

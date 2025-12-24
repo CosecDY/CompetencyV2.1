@@ -1,35 +1,28 @@
+import axios from "axios"; // [ADDED] ต้อง Import axios มาเพื่อใช้ isCancel
 import api from "@Services/api";
 
 // ==========================================
 // Interfaces (DTOs)
 // ==========================================
 
-/**
- * ผลลัพธ์การค้นหา (สำหรับแสดงในหน้า Search Result)
- */
 export interface CompetencySearchResult {
-  id: string | number; // TPQI=ID (number), SFIA=Code (string)
+  id: string | number;
   source: "TPQI" | "SFIA";
-  title: string; // ชื่ออาชีพ หรือ Skill
-  category: string; // หมวดหมู่ / สาขา
+  title: string;
+  category: string;
   description: string;
-  availableLevels: number[]; // เลเวลที่มีให้เลือก เช่น [3, 4, 5]
+  availableLevels: number[];
 }
 
-/**
- * โครงสร้างข้อมูล Evidence ย่อย (Skill / SubSkill)
- */
 export interface EvidenceItem {
-  itemId: number; // TPQI=SkillId, SFIA=SubSkillId
+  itemId: number;
+  type?: "SKILL" | "KNOWLEDGE";
   text: string;
   description?: string;
   evidenceUrl: string | null;
   status: "APPROVED" | "PENDING" | "EMPTY" | "REJECTED";
 }
 
-/**
- * รายละเอียดแบบเต็มของอาชีพ/ทักษะ (สำหรับหน้ากรอกข้อมูล)
- */
 export interface CompetencyDetail {
   source: "TPQI" | "SFIA";
   id: string | number;
@@ -40,13 +33,17 @@ export interface CompetencyDetail {
   items: EvidenceItem[];
 }
 
-/**
- * ข้อมูลสำหรับส่งไปบันทึก Evidence
- */
 export interface SaveEvidenceRequest {
   source: "TPQI" | "SFIA";
   itemId: number;
   url: string;
+  tpqiType?: "SKILL" | "KNOWLEDGE";
+}
+
+export interface DeleteEvidenceRequest {
+  source: "TPQI" | "SFIA";
+  itemId: number;
+  tpqiType?: "SKILL" | "KNOWLEDGE";
 }
 
 // ==========================================
@@ -55,33 +52,34 @@ export interface SaveEvidenceRequest {
 
 export class CompetencyService {
   /**
-   * 1. SEARCH: ค้นหาอาชีพ (TPQI) หรือทักษะ (SFIA)
-   * GET /api/competency/search?q=keyword
+   * 1. SEARCH
    */
-  async search(keyword: string): Promise<CompetencySearchResult[]> {
+  async search(keyword: string, options?: { signal?: AbortSignal }): Promise<CompetencySearchResult[]> {
     try {
       const response = await api.get<CompetencySearchResult[]>("/competency/searchCareer", {
         params: { q: keyword },
+        signal: options?.signal, // ส่ง signal ไปให้ axios
       });
       return response.data;
     } catch (error) {
+      // [FIXED] ใช้ axios.isCancel() แทน api.isCancel()
+      if (axios.isCancel(error)) {
+        // ถ้าเป็นการยกเลิก request ให้ throw ออกไปเพื่อให้ Hook จัดการ (หรือ ignore)
+        throw error;
+      }
+
       console.error("[CompetencyService] Search Error:", error);
       return [];
     }
   }
 
   /**
-   * 2. GET DETAIL: ดึงรายละเอียดและสถานะการส่งงาน
-   * GET /api/competency/detail?source=...&id=...&level=...
+   * 2. GET DETAIL
    */
   async getDetail(source: "TPQI" | "SFIA", id: string | number, level: number): Promise<CompetencyDetail | null> {
     try {
       const response = await api.get<CompetencyDetail>("/competency/detail", {
-        params: {
-          source,
-          id,
-          level,
-        },
+        params: { source, id, level },
       });
       return response.data;
     } catch (error) {
@@ -91,16 +89,32 @@ export class CompetencyService {
   }
 
   /**
-   * 3. SAVE EVIDENCE: บันทึก Link หลักฐาน
-   * POST /api/competency/evidence
+   * 3. SAVE EVIDENCE
    */
   async saveEvidence(data: SaveEvidenceRequest): Promise<boolean> {
     try {
       const response = await api.post("/competency/evidence", data);
       return response.status === 200 || response.status === 201;
-    } catch (error) {
+    } catch (error: any) {
       console.error("[CompetencyService] Save Evidence Error:", error);
-      throw new Error("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      const backendMessage = error.response?.data?.error;
+      throw new Error(backendMessage || "บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+  }
+
+  /**
+   * 4. DELETE EVIDENCE
+   */
+  async deleteEvidence(data: DeleteEvidenceRequest): Promise<boolean> {
+    try {
+      const response = await api.delete("/competency/evidence", {
+        data: data,
+      });
+      return response.status === 200;
+    } catch (error: any) {
+      console.error("[CompetencyService] Delete Evidence Error:", error);
+      const backendMessage = error.response?.data?.error;
+      throw new Error(backendMessage || "ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     }
   }
 }

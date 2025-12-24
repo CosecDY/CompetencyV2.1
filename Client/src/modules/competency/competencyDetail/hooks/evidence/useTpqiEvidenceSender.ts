@@ -1,10 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { TpqiEvidenceService } from "../../services/postTpqiEvidenceAPI";
 import { DeleteTpqiEvidenceService } from "../../services/deleteTpqiEvidenceAPI";
-import {
-  SubmitTpqiEvidenceRequest,
-  TpqiApiResponse as ApiResponse,
-} from "../../types/tpqi";
+import { SubmitTpqiEvidenceRequest, TpqiApiResponse as ApiResponse } from "../../types/tpqi";
 /**
  * Interface for TPQI evidence state management
  */
@@ -40,7 +37,7 @@ export interface EvidenceType {
  *   submitted: { "skill-123": true, "knowledge-456": false }
  *   loading: { "skill-123": false, "knowledge-456": true }
  *   errors: { "skill-123": "", "knowledge-456": "Please enter evidence URL" }
- *   approvalStatus: { "skill-123": "APPROVED", "knowledge-456": "NOT_APPROVED" }
+ *   approvalStatus: { "skill-123": "APPROVED", "knowledge-456": "PENDING" }
  * }
  * ```
  *
@@ -118,20 +115,18 @@ export const useTpqiEvidenceSender = () => {
             const key = `skill-${skillId}`;
             newUrls[key] = data.evidenceUrl || "";
             newSubmitted[key] = !!data.evidenceUrl;
-            newApprovalStatus[key] = data.approvalStatus || "NOT_APPROVED";
+            newApprovalStatus[key] = data.approvalStatus || "PENDING";
           });
         }
 
         // Initialize knowledge
         if (evidenceData.knowledge) {
-          Object.entries(evidenceData.knowledge).forEach(
-            ([knowledgeId, data]) => {
-              const key = `knowledge-${knowledgeId}`;
-              newUrls[key] = data.evidenceUrl || "";
-              newSubmitted[key] = !!data.evidenceUrl;
-              newApprovalStatus[key] = data.approvalStatus || "NOT_APPROVED";
-            },
-          );
+          Object.entries(evidenceData.knowledge).forEach(([knowledgeId, data]) => {
+            const key = `knowledge-${knowledgeId}`;
+            newUrls[key] = data.evidenceUrl || "";
+            newSubmitted[key] = !!data.evidenceUrl;
+            newApprovalStatus[key] = data.approvalStatus || "PENDING";
+          });
         }
 
         return {
@@ -142,7 +137,7 @@ export const useTpqiEvidenceSender = () => {
         };
       });
     },
-    [],
+    []
   );
 
   /**
@@ -253,13 +248,10 @@ export const useTpqiEvidenceSender = () => {
     try {
       const evidenceRequest: SubmitTpqiEvidenceRequest = {
         evidenceUrl: evidenceUrl.trim(),
-        ...(evidence.type === "skill"
-          ? { skillId: evidence.id }
-          : { knowledgeId: evidence.id }),
+        ...(evidence.type === "skill" ? { skillId: evidence.id } : { knowledgeId: evidence.id }),
       };
 
-      const response: ApiResponse =
-        await evidenceService.submitEvidence(evidenceRequest);
+      const response: ApiResponse = await evidenceService.submitEvidence(evidenceRequest);
 
       setEvidenceState((prev) => {
         if (response.success) {
@@ -268,7 +260,7 @@ export const useTpqiEvidenceSender = () => {
             submitted: { ...prev.submitted, [key]: true },
             approvalStatus: {
               ...prev.approvalStatus,
-              [key]: response.data?.approvalStatus || "NOT_APPROVED",
+              [key]: response.data?.approvalStatus || "PENDING",
             },
           };
         } else {
@@ -282,10 +274,7 @@ export const useTpqiEvidenceSender = () => {
         }
       });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to submit evidence. Please try again.";
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit evidence. Please try again.";
       setEvidenceState((prev) => ({
         ...prev,
         errors: { ...prev.errors, [key]: errorMessage },
@@ -333,10 +322,7 @@ export const useTpqiEvidenceSender = () => {
     const key = getEvidenceKey(evidence);
 
     // Validate evidence
-    if (
-      !evidence.type ||
-      (evidence.type !== "knowledge" && evidence.type !== "skill")
-    ) {
+    if (!evidence.type || (evidence.type !== "knowledge" && evidence.type !== "skill")) {
       setEvidenceState((prev) => ({
         ...prev,
         errors: { ...prev.errors, [key]: "Invalid evidence type" },
@@ -360,9 +346,7 @@ export const useTpqiEvidenceSender = () => {
         errors: { ...prev.errors, [key]: "" },
       }));
 
-      console.log(
-        `🔥 Deleting ${evidence.type} evidence for ID: ${evidence.id}`,
-      );
+      console.log(`🔥 Deleting ${evidence.type} evidence for ID: ${evidence.id}`);
 
       // Make API call
       const result = await deleteService.deleteEvidence({
@@ -371,10 +355,7 @@ export const useTpqiEvidenceSender = () => {
       });
 
       if (result.success) {
-        console.log(
-          `✅ ${evidence.type} evidence deleted successfully:`,
-          result.data,
-        );
+        console.log(`✅ ${evidence.type} evidence deleted successfully:`, result.data);
 
         // Clear evidence from state after successful deletion
         setEvidenceState((prev) => ({
@@ -387,12 +368,8 @@ export const useTpqiEvidenceSender = () => {
 
         return true;
       } else {
-        const errorMessage =
-          result.message || `Failed to delete ${evidence.type} evidence`;
-        console.error(
-          `❌ ${evidence.type} evidence deletion failed:`,
-          errorMessage,
-        );
+        const errorMessage = result.message || `Failed to delete ${evidence.type} evidence`;
+        console.error(`❌ ${evidence.type} evidence deletion failed:`, errorMessage);
         setEvidenceState((prev) => ({
           ...prev,
           errors: { ...prev.errors, [key]: errorMessage },
@@ -400,8 +377,7 @@ export const useTpqiEvidenceSender = () => {
         return false;
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       console.error(`❌ Error deleting ${evidence.type} evidence:`, error);
       setEvidenceState((prev) => ({
         ...prev,
