@@ -197,7 +197,7 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
 
 ```
 
-VITE_API_BASE_URL: Base URL of the Backend API
+VITE_API_BASE_URL: Base URL of the Backend API \*
 VITE_GOOGLE_CLIENT_ID: Google OAuth Client ID
 
 ⚠️ The frontend will not function correctly if this file is missing.
@@ -222,7 +222,7 @@ up : Start containers
 
 ### Application Access
 
-Frontend UI: http://localhost:5173
+Frontend UI: http://localhost:5173 \*
 Backend API: http://localhost:3000
 
 ---
