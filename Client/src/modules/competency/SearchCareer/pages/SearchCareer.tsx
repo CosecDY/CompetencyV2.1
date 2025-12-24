@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Briefcase, Globe, ChevronRight, Loader2, X, SlidersHorizontal, TrendingUp } from "lucide-react";
+import { Search, Briefcase, Globe, Loader2, X, SlidersHorizontal, TrendingUp } from "lucide-react";
 import { useCompetency } from "../hooks/useCompetency";
 import { CompetencySearchResult } from "../services/competencyService";
 import Layout from "@Layouts/Layout";
@@ -325,12 +325,6 @@ export default function SearchResultsPage() {
                               <span className="text-xs text-slate-400">ไม่มีข้อมูลระดับ</span>
                             </div>
                           )}
-                        </div>
-
-                        <div className="mt-4 flex justify-end">
-                          <button className="text-xs font-medium text-slate-400 group-hover:text-primary flex items-center transition-colors">
-                            รายละเอียด <ChevronRight size={14} className="ml-0.5" />
-                          </button>
                         </div>
                       </div>
                     </div>

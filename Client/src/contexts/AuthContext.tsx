@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const lastActivityRef = useRef<number>(Date.now());
 
   // Constants
-  const INACTIVITY_LIMIT = 1 * 60 * 1000; // 15 นาที
+  const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 นาที
   const REFRESH_THRESHOLD = 30; // 30 วินาที
 
   // ==========================================

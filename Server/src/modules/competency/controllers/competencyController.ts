@@ -66,13 +66,11 @@ export const CompetencyController = {
    */
   saveEvidence: async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { source, itemId, url, tpqiType } = req.body;
+      const { source, itemId, url, type: inputType, tpqiType: legacyType } = req.body;
+      const tpqiType = inputType || legacyType;
+
       if (!req.user?.userId) {
-        res.status(401).json({
-          success: false,
-          message: "Authentication required.",
-        });
-        return;
+        return res.status(401).json({ success: false, message: "Authentication required." });
       }
       const userId = req.user.userId;
 
@@ -93,7 +91,7 @@ export const CompetencyController = {
       return res.json({ success: true, data: result });
     } catch (error: any) {
       console.error("[CompetencyController] Save Evidence Error:", error.message);
-      return res.status(400).json({ error: error.message || "Failed to save evidence" });
+      return res.status(400).json({ success: false, error: error.message || "Failed to save evidence" });
     }
   },
 
@@ -103,22 +101,16 @@ export const CompetencyController = {
    */
   deleteEvidence: async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { source, itemId, tpqiType } = req.body;
+      const { source, itemId, type: inputType, tpqiType: legacyType } = req.body;
+      const tpqiType = inputType || legacyType;
+
       if (!req.user?.userId) {
-        res.status(401).json({
-          success: false,
-          message: "Authentication required.",
-        });
-        return;
+        return res.status(401).json({ success: false, message: "Authentication required." });
       }
       const userId = req.user.userId;
 
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized: กรุณาเข้าสู่ระบบก่อนลบข้อมูล" });
-      }
-
       if (!source || !itemId) {
-        return res.status(400).json({ error: "Missing required fields (source, itemId)" });
+        return res.status(400).json({ error: "Missing required fields" });
       }
 
       const dto: DeleteEvidenceDto = {
@@ -131,9 +123,9 @@ export const CompetencyController = {
       const result = await competencyService.deleteEvidence(dto);
 
       return res.json({ success: true, data: result });
-    } catch (error) {
-      console.error("[CompetencyController] Delete Evidence Error:", error);
-      return res.status(500).json({ error: "Failed to delete evidence" });
+    } catch (error: any) {
+      console.error("[CompetencyController] Delete Evidence Error:", error.message);
+      return res.status(500).json({ error: error.message || "Failed to delete evidence" });
     }
   },
 };

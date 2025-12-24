@@ -77,7 +77,7 @@ const LoginPage: React.FC = () => {
         <div className="md:w-1/2 w-full bg-white flex flex-col items-center justify-center p-8 md:p-16 relative">
           <div className="w-full max-w-sm">
             <div className="mb-12">
-              <h3 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Welcome Come</h3>
+              <h3 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Welcome Back</h3>
               <p className="text-slate-500">Sign in to access your dashboard.</p>
             </div>
 

@@ -7,15 +7,7 @@ interface SearchErrorStateProps {
 }
 
 // Enhanced error types with specific handling
-type ErrorType =
-  | "network"
-  | "validation"
-  | "database"
-  | "timeout"
-  | "server"
-  | "rateLimit"
-  | "permission"
-  | "unknown";
+type ErrorType = "network" | "validation" | "database" | "timeout" | "server" | "rateLimit" | "permission" | "unknown";
 
 interface ErrorConfig {
   icon: JSX.Element;
@@ -29,49 +21,19 @@ interface ErrorConfig {
 const detectErrorType = (error: string): ErrorType => {
   const lowerError = error.toLowerCase();
 
-  if (
-    lowerError.includes("เครือข่าย") ||
-    lowerError.includes("เชื่อมต่อ") ||
-    lowerError.includes("network") ||
-    lowerError.includes("connection")
-  )
-    return "network";
+  if (lowerError.includes("เครือข่าย") || lowerError.includes("เชื่อมต่อ") || lowerError.includes("network") || lowerError.includes("connection")) return "network";
 
-  if (
-    lowerError.includes("อย่างน้อย") ||
-    lowerError.includes("ตัวอักษร") ||
-    lowerError.includes("ยาวเกินไป") ||
-    lowerError.includes("validation")
-  )
-    return "validation";
+  if (lowerError.includes("อย่างน้อย") || lowerError.includes("ตัวอักษร") || lowerError.includes("ยาวเกินไป") || lowerError.includes("validation")) return "validation";
 
-  if (lowerError.includes("ฐานข้อมูล") || lowerError.includes("database"))
-    return "database";
+  if (lowerError.includes("ฐานข้อมูล") || lowerError.includes("database")) return "database";
 
-  if (
-    lowerError.includes("หมดเวลา") ||
-    lowerError.includes("ใช้เวลานานเกินไป") ||
-    lowerError.includes("timeout")
-  )
-    return "timeout";
+  if (lowerError.includes("หมดเวลา") || lowerError.includes("ใช้เวลานานเกินไป") || lowerError.includes("timeout")) return "timeout";
 
-  if (
-    lowerError.includes("เซิร์ฟเวอร์") ||
-    lowerError.includes("ระบบ") ||
-    lowerError.includes("server") ||
-    lowerError.includes("500")
-  )
-    return "server";
+  if (lowerError.includes("เซิร์ฟเวอร์") || lowerError.includes("ระบบ") || lowerError.includes("server") || lowerError.includes("500")) return "server";
 
-  if (lowerError.includes("บ่อยเกินไป") || lowerError.includes("rate limit"))
-    return "rateLimit";
+  if (lowerError.includes("บ่อยเกินไป") || lowerError.includes("rate limit")) return "rateLimit";
 
-  if (
-    lowerError.includes("ไม่ได้รับอนุญาต") ||
-    lowerError.includes("permission") ||
-    lowerError.includes("unauthorized")
-  )
-    return "permission";
+  if (lowerError.includes("ไม่ได้รับอนุญาต") || lowerError.includes("permission") || lowerError.includes("unauthorized")) return "permission";
 
   return "unknown";
 };
@@ -80,12 +42,7 @@ const detectErrorType = (error: string): ErrorType => {
 const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   network: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -101,18 +58,8 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   },
   validation: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-        />
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
       </svg>
     ),
     guidance: "กรุณาแก้ไขคำค้นหาของคุณตามข้อกำหนดแล้วลองใหม่",
@@ -122,18 +69,8 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   },
   database: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
-        />
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
       </svg>
     ),
     guidance: "ฐานข้อมูลกำลังมีปัญหาชั่วคราว กรุณารอสักครู่แล้วลองใหม่",
@@ -143,62 +80,30 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   },
   timeout: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    guidance:
-      "การค้นหาใช้เวลานานกว่าปกติ ลองใช้คำค้นหาที่สั้นกว่าหรือเฉพาะเจาะจงมากขึ้น",
+    guidance: "การค้นหาใช้เวลานานกว่าปกติ ลองใช้คำค้นหาที่สั้นกว่าหรือเฉพาะเจาะจงมากขึ้น",
     retryable: true,
     severity: "medium",
     color: "blue",
   },
   server: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
-    guidance:
-      "เซิร์ฟเวอร์กำลังมีปัญหา กรุณาลองใหม่ในภายหลัง หรือติดต่อผู้ดูแลระบบ",
+    guidance: "เซิร์ฟเวอร์กำลังมีปัญหา กรุณาลองใหม่ในภายหลัง หรือติดต่อผู้ดูแลระบบ",
     retryable: true,
     severity: "high",
     color: "red",
   },
   rateLimit: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-        />
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
       </svg>
     ),
     guidance: "คุณค้นหาบ่อยเกินไป โปรดรอสักครู่ก่อนค้นหาอีกครั้ง",
@@ -208,12 +113,7 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   },
   permission: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -229,22 +129,11 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
   },
   unknown: {
     icon: (
-      <svg
-        className="w-8 h-8"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
+      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    guidance:
-      "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ",
+    guidance: "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ",
     retryable: true,
     severity: "medium",
     color: "gray",
@@ -261,10 +150,7 @@ const ERROR_CONFIGS: Record<ErrorType, ErrorConfig> = {
  * - Progressive retry mechanisms
  * - Accessibility improvements
  */
-const SearchErrorState: React.FC<SearchErrorStateProps> = ({
-  error,
-  onRetry,
-}) => {
+const SearchErrorState: React.FC<SearchErrorStateProps> = ({ error, onRetry }) => {
   // Memoized error analysis for performance
   const errorAnalysis = useMemo(() => {
     const errorType = detectErrorType(error);
@@ -350,46 +236,30 @@ const SearchErrorState: React.FC<SearchErrorStateProps> = ({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="flex-1 flex items-center justify-center py-12"
     >
-      <div
-        className={`inline-flex flex-col items-center space-y-6 p-8 ${colorScheme.bg} backdrop-blur-sm rounded-2xl shadow-lg ${colorScheme.border} border max-w-md mx-auto`}
-      >
+      <div className={`inline-flex flex-col items-center space-y-6 p-8 ${colorScheme.bg} backdrop-blur-sm rounded-2xl shadow-lg ${colorScheme.border} border max-w-md mx-auto`}>
         {/* Error Icon with Severity Indicator */}
         <div className={`relative p-4 ${colorScheme.iconBg} rounded-full`}>
           <div className={colorScheme.text}>{config.icon}</div>
           {/* Severity Badge */}
-          <div
-            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${getSeverityBadgeColor(
-              config.severity
-            )} border-2 border-white`}
-          />
+          <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${getSeverityBadgeColor(config.severity)} border-2 border-white`} />
         </div>
 
         {/* Error Information */}
         <div className="text-center space-y-3">
-          <h3 className="text-lg font-semibold text-gray-900">
-            เกิดข้อผิดพลาด
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900">เกิดข้อผิดพลาด</h3>
 
           {/* Error Message */}
           <div className="space-y-2">
-            <p className="text-gray-700 font-medium text-sm bg-white/50 px-3 py-2 rounded-lg border border-gray-100">
-              {error}
-            </p>
+            <p className="text-gray-700 font-medium text-sm bg-white/50 px-3 py-2 rounded-lg border border-gray-100">{error}</p>
 
             {/* Error Type Badge */}
             <div className="flex justify-center">
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorScheme.iconBg} ${colorScheme.text} border ${colorScheme.border}`}
-              >
-                ประเภท: {errorType}
-              </span>
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorScheme.iconBg} ${colorScheme.text} border ${colorScheme.border}`}>ประเภท: {errorType}</span>
             </div>
           </div>
 
           {/* Guidance */}
-          <p className="text-sm text-gray-600 leading-relaxed">
-            {config.guidance}
-          </p>
+          <p className="text-sm text-gray-600 leading-relaxed">{config.guidance}</p>
         </div>
 
         {/* Action Buttons */}
@@ -400,18 +270,8 @@ const SearchErrorState: React.FC<SearchErrorStateProps> = ({
               className="inline-flex items-center justify-center px-4 py-2 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="ลองใหม่อีกครั้ง"
             >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               ลองใหม่อีกครั้ง
             </button>
@@ -422,18 +282,8 @@ const SearchErrorState: React.FC<SearchErrorStateProps> = ({
             className="inline-flex items-center justify-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200 text-sm"
             aria-label="รีเฟรชหน้าเว็บ"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             รีเฟรชหน้าเว็บ
           </button>
@@ -441,20 +291,12 @@ const SearchErrorState: React.FC<SearchErrorStateProps> = ({
           {/* Additional Recovery Options for High Severity Errors */}
           {config.severity === "high" && (
             <div className="mt-4 p-3 bg-white/80 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-600 mb-2 font-medium">
-                ตัวเลือกเพิ่มเติม:
-              </p>
+              <p className="text-xs text-gray-600 mb-2 font-medium">ตัวเลือกเพิ่มเติม:</p>
               <div className="flex flex-col space-y-1 text-xs">
-                <button
-                  onClick={() => (window.location.href = "/")}
-                  className="text-left text-teal-600 hover:text-teal-700 transition-colors"
-                >
+                <button onClick={() => (window.location.href = "/")} className="text-left text-teal-600 hover:text-teal-700 transition-colors">
                   • กลับไปหน้าหลัก
                 </button>
-                <a
-                  href="mailto:support@example.com"
-                  className="text-teal-600 hover:text-teal-700 transition-colors"
-                >
+                <a href="mailto:support@example.com" className="text-teal-600 hover:text-teal-700 transition-colors">
                   • ติดต่อฝ่ายสนับสนุน
                 </a>
               </div>
@@ -463,9 +305,7 @@ const SearchErrorState: React.FC<SearchErrorStateProps> = ({
         </div>
 
         {/* Error Timestamp for Debugging */}
-        <div className="text-xs text-gray-400 text-center">
-          เวลาที่เกิดข้อผิดพลาด: {new Date().toLocaleString("th-TH")}
-        </div>
+        <div className="text-xs text-gray-400 text-center">เวลาที่เกิดข้อผิดพลาด: {new Date().toLocaleString("th-TH")}</div>
       </div>
     </motion.div>
   );

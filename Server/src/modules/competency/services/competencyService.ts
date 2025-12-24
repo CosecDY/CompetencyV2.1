@@ -179,37 +179,39 @@ export class CompetencyBackendService {
   // PRIVATE HELPER FUNCTIONS
   // ======================================================================
 
-  /**
-   * ตรวจสอบว่า URL สามารถเข้าถึงได้จริง (Return 200-299)
-   */
   private async _checkUrlReachability(url: string): Promise<void> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+      new URL(url);
+    } catch (e) {
+      throw new Error("รูปแบบ URL ไม่ถูกต้อง (ต้องมี http:// หรือ https://)");
+    }
 
-      // ใช้ HEAD ก่อนเพื่อความเร็ว ถ้าไม่ได้ค่อยใช้ GET
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      };
+
+      // ยิง Request
       const response = await fetch(url, {
-        method: "HEAD",
+        method: "GET",
+        headers: headers,
         signal: controller.signal,
       });
+
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        // บาง Server ไม่รองรับ HEAD อาจจะตอบ 405 หรือ 404 หลอกๆ ลอง GET อีกทีเพื่อความชัวร์
-        if (response.status === 405 || response.status === 404) {
-          const controller2 = new AbortController();
-          const timeoutId2 = setTimeout(() => controller2.abort(), 5000);
-          const responseGet = await fetch(url, { method: "GET", signal: controller2.signal });
-          clearTimeout(timeoutId2);
-          if (!responseGet.ok) throw new Error("Unreachable");
-        } else {
-          throw new Error("Unreachable");
-        }
+      if (response.status === 404) {
+        throw new Error("ไม่พบลิงก์นี้ (404 Not Found) กรุณาตรวจสอบลิงก์อีกครั้ง");
       }
+
+      return;
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        throw new Error("URL validation timed out. Please check your link.");
+      if (error.message.includes("404") || error.message.includes("รูปแบบ URL")) {
+        throw error;
       }
+      return;
     }
   }
 

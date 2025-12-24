@@ -1,4 +1,4 @@
-import axios from "axios"; // [ADDED] ต้อง Import axios มาเพื่อใช้ isCancel
+import axios from "axios";
 import api from "@Services/api";
 
 // ==========================================
@@ -37,7 +37,7 @@ export interface SaveEvidenceRequest {
   source: "TPQI" | "SFIA";
   itemId: number;
   url: string;
-  tpqiType?: "SKILL" | "KNOWLEDGE";
+  type?: "SKILL" | "KNOWLEDGE" | "PERFORMANCE";
 }
 
 export interface DeleteEvidenceRequest {
@@ -58,13 +58,11 @@ export class CompetencyService {
     try {
       const response = await api.get<CompetencySearchResult[]>("/competency/searchCareer", {
         params: { q: keyword },
-        signal: options?.signal, // ส่ง signal ไปให้ axios
+        signal: options?.signal,
       });
       return response.data;
     } catch (error) {
-      // [FIXED] ใช้ axios.isCancel() แทน api.isCancel()
       if (axios.isCancel(error)) {
-        // ถ้าเป็นการยกเลิก request ให้ throw ออกไปเพื่อให้ Hook จัดการ (หรือ ignore)
         throw error;
       }
 
