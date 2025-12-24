@@ -172,22 +172,6 @@ export default function EvidenceDetailPage() {
                 <EvidenceItemRow key={item.itemId} item={item} index={index} onSave={handleSave} loading={dataLoading} isAuthenticated={isAuthenticated} />
               ))}
             </div>
-
-            {/* Footer Actions */}
-            <div className="mt-12 flex justify-end gap-3 pt-6 border-t border-border">
-              <button className="px-6 py-3 rounded-lg text-muted font-medium hover:bg-background hover:text-maintext transition-colors">บันทึกแบบร่าง (Save Draft)</button>
-              <button
-                disabled={progressPercent < 100 || !isAuthenticated}
-                className={`px-8 py-3 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2 ${
-                  progressPercent === 100 && isAuthenticated
-                    ? "bg-slate-800 hover:bg-slate-700 text-white cursor-pointer shadow-slate-300 transform hover:-translate-y-0.5"
-                    : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                }`}
-              >
-                {isAuthenticated ? <CheckCircle size={18} /> : <Lock size={18} />}
-                ยืนยันส่งทั้งหมด (Submit All)
-              </button>
-            </div>
           </div>
         </div>
       </WhiteTealBackground>
@@ -206,12 +190,16 @@ interface EvidenceItemRowProps {
 }
 
 function EvidenceItemRow({ item, index, onSave, loading, isAuthenticated }: EvidenceItemRowProps) {
-  const [url, setUrl] = useState(item.evidenceUrl || "");
+  const [url, setUrl] = useState(isAuthenticated ? item.evidenceUrl || "" : "");
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
-    setUrl(item.evidenceUrl || "");
-  }, [item.evidenceUrl]);
+    if (isAuthenticated) {
+      setUrl(item.evidenceUrl || "");
+    } else {
+      setUrl("");
+    }
+  }, [item.evidenceUrl, isAuthenticated]);
 
   const isChanged = url !== (item.evidenceUrl || "");
   const isEmpty = url.trim() === "";
