@@ -6,14 +6,18 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import { swaggerOptions } from "./swagger/swaggerOptions";
 import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app: Application = express();
 const httpServer: Server = createServer(app);
 
 // Middleware
+const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://ec2-13-239-227-252.ap-southeast-2.compute.amazonaws.com:5173"],
+    origin: allowedOrigins,
     credentials: true,
   })
 );

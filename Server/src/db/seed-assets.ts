@@ -79,7 +79,7 @@ async function main() {
     }
   }
 
-  console.log("✅ Seeded SFIA, TPQI, and RBAC assets with operations and permissions.");
+  console.log("Seeded SFIA, TPQI, and RBAC assets with operations and permissions.");
 }
 
 main()
