@@ -19,7 +19,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   try {
     const token = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.split(" ")[1] : req.cookies?.accessToken;
     if (!token) {
-      console.log("No token found in Header or Cookie");
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
     let payload;

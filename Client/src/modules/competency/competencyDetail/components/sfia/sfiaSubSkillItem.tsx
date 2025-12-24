@@ -33,12 +33,7 @@ interface SubSkillItemProps {
 }
 
 // Custom hook for evidence fetching
-const useEvidenceFetcher = (
-  skillCode: string,
-  subskillId: number,
-  onUrlChange: (value: string) => void,
-  onEvidenceLoaded?: (evidence: string) => void
-) => {
+const useEvidenceFetcher = (skillCode: string, subskillId: number, onUrlChange: (value: string) => void, onEvidenceLoaded?: (evidence: string) => void) => {
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceLoaded, setEvidenceLoaded] = useState(false);
 
@@ -58,17 +53,11 @@ const useEvidenceFetcher = (
         const evidences: EvidenceItem[] = Array.isArray(response.data.evidences)
           ? response.data.evidences.filter(
               (evidence: unknown): evidence is EvidenceItem =>
-                typeof evidence === "object" &&
-                evidence !== null &&
-                !Array.isArray(evidence) &&
-                "id" in evidence &&
-                typeof (evidence as EvidenceItem).id === "number"
+                typeof evidence === "object" && evidence !== null && !Array.isArray(evidence) && "id" in evidence && typeof (evidence as EvidenceItem).id === "number"
             )
           : [];
 
-        const subSkillEvidence = evidences.find(
-          (evidence) => evidence.id === subskillId
-        );
+        const subSkillEvidence = evidences.find((evidence) => evidence.id === subskillId);
 
         const url = subSkillEvidence?.evidenceUrl ?? undefined;
         if (url) {
@@ -114,12 +103,7 @@ const SubSkillItem: React.FC<SubSkillItemProps> = ({
   onEvidenceLoaded,
 }) => {
   // Custom hook for evidence fetching
-  const { evidenceLoading } = useEvidenceFetcher(
-    skillCode,
-    subskill.id,
-    onUrlChange,
-    onEvidenceLoaded
-  );
+  const { evidenceLoading } = useEvidenceFetcher(skillCode, subskill.id, onUrlChange, onEvidenceLoaded);
 
   // Debug wrapper for onDelete
   const handleDeleteDebug = () => {

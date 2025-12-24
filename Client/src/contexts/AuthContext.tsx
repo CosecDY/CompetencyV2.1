@@ -1,7 +1,7 @@
 import React, { createContext, useState, ReactNode, useContext, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLoginResponse, loginWithGoogle, logout as logoutService, getCurrentUser as fetchCurrentUserService, refreshAccessToken } from "@Services/competency/authService";
-import { Modal } from "@Components/Admin/ExportComponent";
+import CustomAuthModal from "./CustomAuthModal";
 
 // ==========================================
 // Types
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const lastActivityRef = useRef<number>(Date.now());
 
   // Constants
-  const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 นาที
+  const INACTIVITY_LIMIT = 1 * 60 * 1000; // 15 นาที
   const REFRESH_THRESHOLD = 30; // 30 วินาที
 
   // ==========================================
@@ -271,24 +271,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <AuthContext.Provider value={value}>
       {children}
-      <Modal
-        isOpen={modal.isOpen}
-        onClose={() => setModal((prev) => ({ ...prev, isOpen: false }))}
-        title="แจ้งเตือนระบบ"
-        size="sm"
-        footer={
-          <button
-            onClick={() => setModal((prev) => ({ ...prev, isOpen: false }))}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            รับทราบ
-          </button>
-        }
-      >
-        <div className="text-center py-2">
-          <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">{modal.message}</p>
+      <CustomAuthModal isOpen={modal.isOpen} onClose={() => setModal((prev) => ({ ...prev, isOpen: false }))} title="การแจ้งเตือน">
+        <div className="flex flex-col items-center">
+          <p className="text-slate-600 text-base font-medium leading-relaxed">{modal.message}</p>
+
+          <p className="text-[10px] text-slate-400 mt-4 uppercase tracking-wider opacity-60">Competency Management Security</p>
         </div>
-      </Modal>
+      </CustomAuthModal>
     </AuthContext.Provider>
   );
 };

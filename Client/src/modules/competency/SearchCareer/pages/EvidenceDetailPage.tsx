@@ -1,20 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Link as LinkIcon,
-  Save,
-  CheckCircle,
-  AlertCircle,
-  FileText,
-  ExternalLink,
-  ChevronRight,
-  Loader2,
-  Lock,
-  Trash2,
-  BookOpen, // Icon สำหรับ Knowledge
-  Wrench, // Icon สำหรับ Skill/Performance
-} from "lucide-react";
+import { ArrowLeft, Link as LinkIcon, Save, CheckCircle, AlertCircle, FileText, ExternalLink, ChevronRight, Loader2, Lock, Trash2, BookOpen, Wrench } from "lucide-react";
 import { useCompetency } from "../hooks/useCompetency";
 import { CompetencyDetail, EvidenceItem } from "../services/competencyService";
 import { useAuth } from "@Contexts/AuthContext";
@@ -48,41 +34,21 @@ export default function EvidenceDetailPage() {
     }
   }, [source, id, level, getCompetencyDetail]);
 
-  // -------------------------------------------------------
-  // [UPDATED] Handle Save: เพิ่ม Logic เช็ค TPQI Type
-  // -------------------------------------------------------
   const handleSave = async (itemId: number, url: string) => {
-    // [DEBUG 1] เช็คว่าฟังก์ชันถูกเรียกไหม
-    console.log("👉 1. Handle Save Triggered");
-    console.log("   - ItemID:", itemId, typeof itemId);
-    console.log("   - URL:", url);
-    console.log("   - Source:", source);
-    console.log("   - IsAuthenticated:", isAuthenticated);
-
     if (!data || !source) {
-      console.error("❌ Fails: Data or Source is missing");
+      console.error("Fails: Data or Source is missing");
       return;
     }
 
     if (!isAuthenticated) {
-      console.error("❌ Fails: User not logged in");
+      console.error("Fails: User not logged in");
       alert("กรุณาเข้าสู่ระบบก่อนบันทึกข้อมูล");
       return;
     }
 
-    // [DEBUG 2] ลองหา Item
-    // ลองแก้เป็น i.itemId == itemId (ใช้ == เผื่อ type ไม่ตรง)
     const targetItem = data.items.find((i) => i.itemId == itemId);
-
-    console.log("👉 2. Target Item Found?:", targetItem);
-
     if (!targetItem) {
-      console.error("❌ Fails: Item not found in data list (Check ID types)");
-      // ปริ้นท์ ID ของทุกตัวออกมาเทียบดู
-      console.log(
-        "   - Available IDs:",
-        data.items.map((i) => i.itemId)
-      );
+      console.error("Fails: Item not found in data list (Check ID types)");
       return;
     }
 
@@ -91,16 +57,12 @@ export default function EvidenceDetailPage() {
     try {
       const tpqiType = source === "TPQI" ? targetItem.type || "PERFORMANCE" : undefined;
 
-      console.log("👉 3. Preparing to call API with Type:", tpqiType);
-
       const success = await saveEvidence({
         source,
         itemId,
         url,
         tpqiType: tpqiType as "KNOWLEDGE" | "SKILL" | undefined,
       });
-
-      console.log("👉 4. API Result Success:", success);
 
       if (success) {
         const updatedItems = data.items.map((item) => {
@@ -116,15 +78,12 @@ export default function EvidenceDetailPage() {
         setData({ ...data, items: updatedItems });
       }
     } catch (err) {
-      console.error("❌ API Error:", err);
+      console.error("API Error:", err);
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  // -------------------------------------------------------
-  // [UPDATED] Handle Delete: เพิ่ม Logic เช็ค TPQI Type
-  // -------------------------------------------------------
   const handleDelete = async (itemId: number) => {
     if (!data || !source) return;
     if (!isAuthenticated) return;
@@ -319,7 +278,6 @@ function EvidenceItemRow({ item, index, onSave, onDelete, loading, isAuthenticat
   const isEmpty = url.trim() === "";
   const isSaved = item.status !== "EMPTY" && item.evidenceUrl;
 
-  // [ADDED] Check Type for TPQI Badge
   const isKnowledge = item.type === "KNOWLEDGE";
 
   return (
@@ -345,7 +303,6 @@ function EvidenceItemRow({ item, index, onSave, onDelete, loading, isAuthenticat
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[10px] font-mono text-muted/70">ID: {item.itemId}</span>
 
-              {/* [ADDED] Badge แสดงประเภท Knowledge vs Skill (เฉพาะ TPQI) */}
               {source === "TPQI" && (
                 <span
                   className={`text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded border ${
