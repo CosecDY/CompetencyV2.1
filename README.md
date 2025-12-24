@@ -1,8 +1,18 @@
 # Competency V2
 
-A centralized system for managing **Competency**, **SFIA**, and **TPQI Frameworks**.
+A centralized system for managing and analyzing **Competency**, **SFIAV9**, and **TPQI Frameworks**.
 
-This project consists of a **Backend API**, **Frontend Web Application**, and **Multiple MySQL Databases**, orchestrated using **Docker Compose**.
+The system is designed as **two integrated subsystems**:
+
+1. **Admin Management System**  
+   Used for managing competency data, frameworks, users, and system configurations.
+
+2. **Career & Competency Exploration System**  
+   Used for searching careers and competencies, viewing skill requirements,
+   and comparing competencies across frameworks.
+
+The project consists of a **Backend API**, **Frontend Web Application**, and
+**Multiple MySQL Databases**, orchestrated using **Docker Compose**.
 
 ---
 
@@ -14,14 +24,15 @@ with the backend via REST APIs, and the backend manages multiple domain-specific
 ### High-Level Architecture Diagram
 
 ```text
+
         ┌────────────────────┐
         │    Web Browser     │
         │ (React + Vite UI)  │
         │  http://localhost  │
         └─────────▲──────────┘
-                │
-                │ REST API / OAuth
-                │
+                  │
+                  │ REST API / OAuth
+                  │
         ┌─────────┴──────────┐
         │   Backend Server   │
         │  Node.js + Express │
@@ -49,14 +60,14 @@ Git
 
 Follow the steps below carefully to ensure the system runs correctly.
 
-** Step 1: Database Preparation **
+### Step 1: Database Preparation
 
 The backend requires three separate MySQL databases.
 These databases must be created before starting the application.
 
 Run the following SQL commands on your MySQL server:
 
----
+```
 
 CREATE DATABASE competency CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE sfiav9 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -64,16 +75,20 @@ CREATE DATABASE tpqi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ```
 
-** Step 2: Environment Configuration **
+---
+
+### Step 2: Environment Configuration
+
 The project is divided into two environments:
 
-* Server (Backend) *
-* Client (Frontend) *
+- Server (Backend) \*
+- Client (Frontend) \*
 
 Each part requires its own .env configuration file.
+
 ```
 
-2.1 Server Environment (server/.env)
+## 2.1 Server Environment (server/.env)
 This file configures database connections, authentication, and server behavior.
 
 Steps
@@ -163,6 +178,8 @@ VITE_GOOGLE_CLIENT_ID: Google OAuth Client ID
 
 ⚠️ The frontend will not function correctly if this file is missing.
 
+---
+
 ### Step 3: Run the Application
 
 From the root directory of the project, run:
@@ -183,3 +200,5 @@ up : Start containers
 
 Frontend UI: http://localhost:5173
 Backend API: http://localhost:3000
+
+```
