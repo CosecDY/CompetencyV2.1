@@ -155,7 +155,8 @@ CORS_ORIGINS=http://localhost:5173
 
 ⚠️ The backend will fail to start if this file is missing or misconfigured.
 
-2.2 Client Environment (client/.env)
+## 2.2 Client Environment (client/.env)
+
 This file configures how the frontend connects to the backend API
 and Google OAuth service.
 
@@ -200,7 +201,57 @@ up : Start containers
 Frontend UI: http://localhost:5173
 Backend API: http://localhost:3000
 
-```
+---
 
+## CI/CD Deployment (GitHub Actions)
 
-```
+This project supports **automatic deployment** to the server using **GitHub Actions**
+whenever code is pushed to the `main` branch.
+
+---
+
+## Deployment Workflow Overview
+
+- Trigger: `git push` to `main` branch
+- CI/CD Tool: GitHub Actions
+- Deployment Method: SSH into server and run Docker Compose
+- Target Directory on Server: `~/CompetencyV2.1`
+
+---
+
+### GitHub Actions Workflow File
+
+Make sure the following workflow file exists in your repository:
+
+**Path**
+.github/workflows/deploy.yml
+
+# Required GitHub Secrets
+
+You must configure the following secrets in your GitHub repository:
+
+Repository → Settings → Secrets and variables → Actions
+
+- SSH_KEY : Private SSH key used to access the server
+
+- SERVER_USER : SSH username on the server
+
+- SERVER_HOST : Server IP address or hostname
+
+# Important Notes
+
+- Do NOT commit private SSH keys to the repository
+
+- Use a dedicated deploy key instead of your personal SSH key
+
+- Make sure .env files already exist on the server
+
+- Production .env files should never be stored in GitHub
+
+# When Deployment Is Successful
+
+- Frontend UI is updated automatically
+
+- Backend API runs with the latest code
+
+- No manual server login is required
