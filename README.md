@@ -86,9 +86,8 @@ The project is divided into two environments:
 
 Each part requires its own .env configuration file.
 
-```
-
 ## 2.1 Server Environment (server/.env)
+
 This file configures database connections, authentication, and server behavior.
 
 Steps
@@ -200,5 +199,8 @@ up : Start containers
 
 Frontend UI: http://localhost:5173
 Backend API: http://localhost:3000
+
+```
+
 
 ```
