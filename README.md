@@ -46,6 +46,7 @@ with the backend via REST APIs, and the backend manages multiple domain-specific
 │  Database │ │ Database  │ │  Database  │
 │  (MySQL)  │ │  (MySQL)  │ │  (MySQL)   │
 └───────────┘ └───────────┘ └────────────┘
+
 ```
 
 ### Prerequisites
